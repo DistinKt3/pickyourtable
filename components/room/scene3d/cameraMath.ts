@@ -144,8 +144,17 @@ export function sitePoints(venue: Venue): Vec3[] {
     if (hasTable) for (const p of a.polygon) flat.push({ x: p[0], z: p[1] });
   }
   for (const f of venue.fixtures) {
-    const r = Math.hypot(f.width, f.depth) / 2;
-    flat.push({ x: f.x - r, z: f.z - r }, { x: f.x + r, z: f.z + r }, { x: f.x - r, z: f.z + r }, { x: f.x + r, z: f.z - r });
+    const r = rad(f.rotation);
+    for (const [u, v] of [
+      [-1, -1],
+      [1, -1],
+      [1, 1],
+      [-1, 1],
+    ] as const) {
+      const lx = (u * f.width) / 2;
+      const lz = (v * f.depth) / 2;
+      flat.push({ x: f.x + lx * Math.cos(r) - lz * Math.sin(r), z: f.z + lx * Math.sin(r) + lz * Math.cos(r) });
+    }
   }
   for (const tb of venue.tables) {
     const rg = ring(tb);

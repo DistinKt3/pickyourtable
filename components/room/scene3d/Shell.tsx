@@ -1,17 +1,13 @@
 "use client";
 
-import { type ThreeEvent, useFrame, useLoader, useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { type ThreeEvent, useFrame } from "@react-three/fiber";
+import { lazy, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { type GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { useRoom } from "@/lib/room/store";
 import type { Venue } from "@/lib/venue/schema";
 import { buildShell, type ShellGeometry } from "./geometry/shell";
 import { keyLight } from "./Lights";
 import {
-  type ClayMaterial,
   createClayMaterial,
   createGlassMaterial,
   createGroundMaterial,
@@ -23,6 +19,9 @@ import {
 import type { Palette } from "./palette";
 import { useRuntime } from "./runtime";
 import { SHADOW_LAYER } from "./Tables";
+
+// The model loaders (GLTF, meshopt, KTX2) load only when a venue ships a model.
+const ModelShell = lazy(() => import("./ModelShell"));
 
 /**
  * The room shell (floors, cutaway walls, glass, fixtures), the seat-only pieces
@@ -37,8 +36,6 @@ export interface ShellProps {
   fade: FadeUniforms;
   modelUrl: string | null;
 }
-
-export const BASIS_PATH = "/vendor/basis/";
 
 function useMaterials(palette: Palette, shared: SharedUniforms, fade: FadeUniforms) {
   const m = useMemo(() => {
@@ -180,57 +177,4 @@ export function Shell({ venue, palette, shared, fade, modelUrl }: ShellProps) {
       </mesh>
     </group>
   );
-}
-
-/* --------------------------------------------------------------- GLB shell */
-
-let ktx2: KTX2Loader | null = null;
-
-/**
- * A venue model (PRD D-2): meshopt geometry and KTX2 textures are supported. Meshes
- * exported from this builder keep their clay attributes (`_pbr`, `_rise`, `_pattern`)
- * and get the live clay material back, so walls still rise for seat views.
- */
-function ModelShell({ url, clay, glass }: { url: string; clay: ClayMaterial; glass: THREE.Material }) {
-  const gl = useThree((s) => s.gl);
-  const gltf = useLoader(GLTFLoader, url, (loader) => {
-    loader.setMeshoptDecoder(MeshoptDecoder);
-    if (!ktx2) ktx2 = new KTX2Loader().setTranscoderPath(BASIS_PATH).detectSupport(gl);
-    loader.setKTX2Loader(ktx2);
-  }) as GLTF;
-  const scene = useMemo(() => {
-    const root = gltf.scene.clone(true);
-    root.traverse((o) => {
-      if (!(o instanceof THREE.Mesh)) return;
-      const g = o.geometry as THREE.BufferGeometry;
-      for (const [from, to] of [
-        ["_pbr", "pbr"],
-        ["_rise", "rise"],
-        ["_pattern", "pattern"],
-      ] as const) {
-        const attr = g.getAttribute(from);
-        if (attr) {
-          g.setAttribute(to, attr);
-          g.deleteAttribute(from);
-        }
-      }
-      const n = g.attributes.position!.count;
-      if (o.name.startsWith("glass")) {
-        if (!g.getAttribute("rise")) g.setAttribute("rise", new THREE.BufferAttribute(new Float32Array(n), 1));
-        o.material = glass;
-        o.renderOrder = 3;
-        return;
-      }
-      if (g.getAttribute("pbr") && g.getAttribute("color")) {
-        if (!g.getAttribute("rise")) g.setAttribute("rise", new THREE.BufferAttribute(new Float32Array(n), 1));
-        if (!g.getAttribute("pattern")) g.setAttribute("pattern", new THREE.BufferAttribute(new Float32Array(n), 1));
-        o.material = clay;
-      }
-      o.castShadow = true;
-      o.receiveShadow = true;
-      o.layers.enable(SHADOW_LAYER);
-    });
-    return root;
-  }, [gltf, clay, glass]);
-  return <primitive object={scene} />;
 }
