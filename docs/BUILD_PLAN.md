@@ -16,7 +16,7 @@ Supply chain: exact pins, a committed lockfile, a 3-day minimum release age, and
 | `pnpm dev` | Dev server on :3000 |
 | `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | Fast checks |
 | `pnpm test` | Vitest: unit and integration (recreates the `pyt_test` database each run) |
-| `pnpm test:e2e` | Playwright against a production build on :3100 with its own database (`pyt_e2e`), phone (390 x 844) and desktop (1440 x 900). One run at a time: the port is fixed. `E2E_SKIP_BUILD=1` reuses the last build |
+| `pnpm test:e2e` | Playwright against a production build on :3100 with its own database (`pyt_e2e`). Projects `phone` (390 x 844) and `desktop` (1440 x 900) run with WebGL off; `phone-3d` and `desktop-3d` run the 3D room specs and the demo on a software GPU. One run at a time: the port is fixed. `E2E_SKIP_BUILD=1` reuses the last build |
 | `pnpm screens` / `pnpm screens:portal` | The screenshot loop for the guest widget, and for every portal screen at iPad and desktop sizes, light and dark |
 | `pnpm audit` / `pnpm secrets` / `pnpm semgrep` | Dependency audit, gitleaks over the git history, Semgrep's TypeScript, React, Next.js, secrets and OWASP rule sets. All must report nothing |
 | `pnpm flag pyt_widget_enabled off` | The kill switch (PRD S-5); `on` restores |
