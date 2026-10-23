@@ -80,7 +80,7 @@ async function timedMove(page: Page, click: () => Promise<void>, done: (p: Pose)
 test("selecting and swiping frame each table with the sheet open; Sit here drops to the seat and back", async ({
   page,
 }, info) => {
-  test.skip(info.project.name !== "phone");
+  test.skip(info.project.name !== "phone-3d");
   test.setTimeout(150_000);
   await open3d(page);
 
@@ -127,7 +127,7 @@ test("selecting and swiping frame each table with the sheet open; Sit here drops
 });
 
 test("with reduced motion, Sit here is a cut", async ({ page }, info) => {
-  test.skip(info.project.name !== "phone");
+  test.skip(info.project.name !== "phone-3d");
   test.setTimeout(150_000);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await open3d(page);

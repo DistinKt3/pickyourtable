@@ -21,7 +21,7 @@ const DEVICES = [
 const OUT = "tests/screens/__output__/matrix";
 
 test("capture the device matrix", async ({ browser }, info) => {
-  test.skip(info.project.name !== "desktop", "one pass is enough");
+  test.skip(info.project.name !== "desktop-3d", "one pass is enough");
   test.setTimeout(900_000);
   mkdirSync(OUT, { recursive: true });
   const friday = nextFriday();

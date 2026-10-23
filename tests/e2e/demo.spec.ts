@@ -9,7 +9,8 @@ import { addDays, formatTimeLabel, nextFriday, pickSlot, query, tapTable } from 
 test("demo script runs end to end in under 90 seconds", async ({ page }, info) => {
   const started = Date.now();
   // Each project and repeat books its own Friday, so runs never compete for Window 1.
-  const friday = addDays(nextFriday(), 7 * (2 * info.repeatEachIndex + (info.project.name === "phone" ? 0 : 1)));
+  const lane = ["phone", "desktop", "phone-3d", "desktop-3d"].indexOf(info.project.name);
+  const friday = addDays(nextFriday(), 7 * (4 * info.repeatEachIndex + lane));
   await page.goto("/v/halcyon");
   await expect(page.getByRole("heading", { name: "Halcyon" })).toBeVisible();
 

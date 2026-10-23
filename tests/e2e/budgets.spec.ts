@@ -11,7 +11,7 @@ import { expect, test } from "@playwright/test";
 test.skip(({ browserName }) => browserName !== "chromium", "needs the Chrome DevTools Protocol");
 
 test("speed and size budgets", async ({ page }, info) => {
-  test.skip(info.project.name !== "phone", "measured on the phone profile");
+  test.skip(info.project.name !== "phone-3d", "measured on the phone profile, with the 3D room");
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Network.enable");
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });

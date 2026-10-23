@@ -22,7 +22,7 @@
     "db:reset": "tsx --conditions=react-server db/seed.ts --reset",
     "vercel-build": "tsx --conditions=react-server db/migrate.ts && next build",
     "e2e:server": "bash scripts/e2e-server.sh",
-    "screens": "SCREENS=1 playwright test tests/e2e/screens.spec.ts --project=desktop",
+    "screens": "SCREENS=1 playwright test tests/e2e/screens.spec.ts --project=desktop-3d",
     "screens:portal": "tsx --conditions=react-server scripts/screens-portal.ts",
     "screens:3d": "tsx scripts/screens-3d.ts",
     "venue:renders": "tsx --conditions=react-server scripts/render-seat-views.ts",
