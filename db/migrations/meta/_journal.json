@@ -15,6 +15,13 @@
       "when": 1792727584501,
       "tag": "0001_no_overlap",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792729557063,
+      "tag": "0002_booking_server",
+      "breakpoints": true
     }
   ]
 }

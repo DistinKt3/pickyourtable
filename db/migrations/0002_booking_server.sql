@@ -1,0 +1,6 @@
+ALTER TABLE "reservation" ADD COLUMN "refund_due_cents" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "reservation" ADD COLUMN "payment_error" text;--> statement-breakpoint
+ALTER TABLE "reservation" ADD COLUMN "payment_intent_canceled_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "reservation_open_intent" ON "reservation" USING btree ("hold_expires_at") WHERE "reservation"."status" = 'expired' AND "reservation"."payment_intent_id" IS NOT NULL AND "reservation"."payment_intent_canceled_at" IS NULL AND "reservation"."confirmed_at" IS NULL AND "reservation"."refund_due_cents" = 0;--> statement-breakpoint
+CREATE INDEX "reservation_refund_pending" ON "reservation" USING btree ("updated_at") WHERE "reservation"."refund_due_cents" > "reservation"."refund_cents";--> statement-breakpoint
+ALTER TABLE "reservation" ADD CONSTRAINT "reservation_refund_due" CHECK ("reservation"."refund_due_cents" >= 0 AND "reservation"."refund_due_cents" <= "reservation"."price_cents");

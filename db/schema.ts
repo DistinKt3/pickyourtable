@@ -170,8 +170,17 @@ export const reservation = pgTable(
     manageNonce: text("manage_nonce").notNull(),
     seatedTableId: uuid("seated_table_id").references(() => venueTable.id),
     refundCents: integer("refund_cents").notNull().default(0),
+    /**
+     * Total the guest is owed back, written before the provider refund is requested.
+     * `refund_cents` catches up once the provider confirms; the job retries any gap.
+     */
+    refundDueCents: integer("refund_due_cents").notNull().default(0),
     refundId: text("refund_id"),
     refundedAt: tz("refunded_at"),
+    /** Plain-words reason for the latest declined payment, shown while the hold lasts. */
+    paymentError: text("payment_error"),
+    /** When the PaymentIntent of an ended hold was cancelled at the provider. */
+    paymentIntentCanceledAt: tz("payment_intent_canceled_at"),
     confirmedAt: tz("confirmed_at"),
     seatedAt: tz("seated_at"),
     cancelledAt: tz("cancelled_at"),
@@ -193,6 +202,17 @@ export const reservation = pgTable(
     ),
     check("reservation_refund", sql`${t.refundCents} >= 0 AND ${t.refundCents} <= ${t.priceCents}`),
     check("reservation_hold_expiry_set", sql`${t.status} <> 'held' OR ${t.holdExpiresAt} IS NOT NULL`),
+    check("reservation_refund_due", sql`${t.refundDueCents} >= 0 AND ${t.refundDueCents} <= ${t.priceCents}`),
+    /** Ended holds whose PaymentIntent may still be open at the provider (the 30 s job). */
+    index("reservation_open_intent")
+      .on(t.holdExpiresAt)
+      .where(
+        sql`${t.status} = 'expired' AND ${t.paymentIntentId} IS NOT NULL AND ${t.paymentIntentCanceledAt} IS NULL AND ${t.confirmedAt} IS NULL AND ${t.refundDueCents} = 0`,
+      ),
+    /** Refunds owed but not yet confirmed by the provider. */
+    index("reservation_refund_pending")
+      .on(t.updatedAt)
+      .where(sql`${t.refundDueCents} > ${t.refundCents}`),
   ],
 );
 
