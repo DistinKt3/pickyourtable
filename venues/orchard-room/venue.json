@@ -1,0 +1,86 @@
+{
+  "id": "orchard-room",
+  "demo": true,
+  "name": "The Orchard Room",
+  "tagline": "Garden dining room",
+  "timezone": "America/New_York",
+  "locale": "en-US",
+  "contact": {
+    "phone": "(212) 555-0187",
+    "email": "hello@orchardroom.example",
+    "address": "40 Garden Row, Demo City, NY"
+  },
+  "brand": { "accent": "#2F5D3F", "accentDark": "#93C9A2", "onAccent": "#FFFFFF" },
+  "room": { "width": 16, "depth": 10, "wallHeight": 1.1, "ceilingHeight": 3.6 },
+  "walls": [
+    { "id": "north", "from": [0, 0], "to": [16, 0], "kind": "solid" },
+    { "id": "east-north", "from": [16, 0], "to": [16, 3.6], "kind": "solid" },
+    { "id": "entrance", "from": [16, 3.6], "to": [16, 5], "kind": "doorway" },
+    { "id": "east-south", "from": [16, 5], "to": [16, 10], "kind": "solid" },
+    { "id": "garden-glass", "from": [16, 10], "to": [0, 10], "kind": "glass" },
+    { "id": "west", "from": [0, 10], "to": [0, 0], "kind": "solid" }
+  ],
+  "areas": [
+    { "id": "dining-room", "kind": "dining", "name": "Dining room", "polygon": [[0, 0], [16, 0], [16, 10], [0, 10]] },
+    { "id": "garden", "kind": "garden", "name": "Orchard garden", "polygon": [[-2, 10.2], [18, 10.2], [18, 16], [-2, 16]] }
+  ],
+  "fixtures": [
+    { "id": "bar-back", "kind": "bar", "x": 8, "z": 0.5, "width": 6, "depth": 0.5, "height": 1.1 },
+    { "id": "west-banquette", "kind": "banquette", "x": 0.35, "z": 4.7, "width": 0.6, "depth": 6.6, "height": 0.9 },
+    { "id": "host-stand", "kind": "host-stand", "x": 14.9, "z": 4.3, "width": 0.5, "depth": 0.9, "height": 1.05 },
+    { "id": "back-of-house", "kind": "back-of-house", "x": 14.6, "z": 1.2, "width": 2.8, "depth": 2.4, "height": 1.1 },
+    { "id": "garden-planter-1", "kind": "planter", "x": 3, "z": 12.4, "width": 1.2, "depth": 1.2, "height": 0.7 },
+    { "id": "garden-planter-2", "kind": "planter", "x": 8, "z": 12.8, "width": 1.2, "depth": 1.2, "height": 0.7 },
+    { "id": "garden-planter-3", "kind": "planter", "x": 13, "z": 12.4, "width": 1.2, "depth": 1.2, "height": 0.7 }
+  ],
+  "surroundings": { "ground": "lawn", "water": null },
+  "tiers": [
+    { "id": "garden", "name": "Garden window", "color": "#4F7A3A", "colorDark": "#A3C98B", "description": "Two-tops against the south glass, facing the orchard.", "bookable": true },
+    { "id": "banquette", "name": "Banquette", "color": "#7A4E7E", "colorDark": "#C9A0CC", "description": "Four-tops on the long west banquette.", "bookable": true },
+    { "id": "bar", "name": "Bar counter", "color": "#9A6A1F", "colorDark": "#E0B566", "description": "Seats at the bar, watching the bartenders work.", "bookable": true },
+    { "id": "standard", "name": "Dining room", "color": "#8C857A", "colorDark": "#A49D92", "description": "Main-floor tables, seated by the host on arrival.", "bookable": false }
+  ],
+  "tables": [
+    { "id": "G1", "label": "Garden 1", "tier": "garden", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 4, "z": 8.8, "rotation": 180, "view": { "yaw": 180, "pitch": -3 }, "attributes": ["window", "garden view"], "photoId": null },
+    { "id": "G2", "label": "Garden 2", "tier": "garden", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 6.8, "z": 8.8, "rotation": 180, "view": { "yaw": 180, "pitch": -3 }, "attributes": ["window", "garden view", "wheelchair accessible"], "photoId": null },
+    { "id": "G3", "label": "Garden 3", "tier": "garden", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 9.6, "z": 8.8, "rotation": 180, "view": { "yaw": 180, "pitch": -3 }, "attributes": ["window", "garden view"], "photoId": null },
+    { "id": "G4", "label": "Garden 4", "tier": "garden", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 12.4, "z": 8.8, "rotation": 180, "view": { "yaw": 185, "pitch": -3 }, "attributes": ["window", "garden view"], "photoId": null },
+
+    { "id": "N1", "label": "Banquette 1", "tier": "banquette", "shape": "rect", "seats": 4, "minParty": 2, "maxParty": 4, "x": 1.45, "z": 2.4, "rotation": 90, "view": { "yaw": 110, "pitch": -3 }, "attributes": ["banquette", "corner"], "photoId": null },
+    { "id": "N2", "label": "Banquette 2", "tier": "banquette", "shape": "rect", "seats": 4, "minParty": 2, "maxParty": 4, "x": 1.45, "z": 4.7, "rotation": 90, "view": { "yaw": 100, "pitch": -3 }, "attributes": ["banquette", "quiet"], "photoId": null },
+    { "id": "N3", "label": "Banquette 3", "tier": "banquette", "shape": "rect", "seats": 4, "minParty": 2, "maxParty": 4, "x": 1.45, "z": 7, "rotation": 90, "view": { "yaw": 120, "pitch": -3 }, "attributes": ["banquette", "garden view"], "photoId": null },
+
+    { "id": "K1", "label": "Bar 1", "tier": "bar", "shape": "counter", "seats": 2, "minParty": 1, "maxParty": 2, "x": 6.3, "z": 1.5, "rotation": 0, "width": 1.7, "depth": 0.55, "view": { "yaw": 0, "pitch": -6 }, "attributes": [], "photoId": null },
+    { "id": "K2", "label": "Bar 2", "tier": "bar", "shape": "counter", "seats": 2, "minParty": 1, "maxParty": 2, "x": 8, "z": 1.5, "rotation": 0, "width": 1.7, "depth": 0.55, "view": { "yaw": 0, "pitch": -6 }, "attributes": ["wheelchair accessible"], "photoId": null },
+    { "id": "K3", "label": "Bar 3", "tier": "bar", "shape": "counter", "seats": 2, "minParty": 1, "maxParty": 2, "x": 9.7, "z": 1.5, "rotation": 0, "width": 1.7, "depth": 0.55, "view": { "yaw": 0, "pitch": -6 }, "attributes": [], "photoId": null },
+
+    { "id": "S1", "label": "Table 21", "tier": "standard", "shape": "round", "seats": 4, "minParty": 1, "maxParty": 4, "x": 5.2, "z": 5, "rotation": 0, "view": { "yaw": 180, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S2", "label": "Table 22", "tier": "standard", "shape": "square", "seats": 4, "minParty": 1, "maxParty": 4, "x": 8.2, "z": 5, "rotation": 0, "view": { "yaw": 180, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S3", "label": "Table 23", "tier": "standard", "shape": "round", "seats": 4, "minParty": 1, "maxParty": 4, "x": 11.2, "z": 5, "rotation": 0, "view": { "yaw": 180, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S4", "label": "Table 24", "tier": "standard", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 14, "z": 6.6, "rotation": 0, "view": { "yaw": 180, "pitch": -3 }, "attributes": [], "photoId": null }
+  ],
+  "booking": {
+    "currency": "usd",
+    "slotMinutes": 15,
+    "holdMinutes": 8,
+    "minLeadMinutes": 60,
+    "bookingWindowDays": 45,
+    "weekendDays": [5, 6],
+    "maxParty": 4,
+    "dayparts": [
+      { "id": "brunch", "name": "Brunch", "days": [6, 7], "start": "10:30", "end": "14:00" },
+      { "id": "dinner", "name": "Dinner", "days": [1, 2, 3, 4, 5, 6, 7], "start": "17:30", "end": "22:30" }
+    ],
+    "turnTimes": [
+      { "minParty": 1, "maxParty": 2, "minutes": 105 },
+      { "minParty": 3, "maxParty": 4, "minutes": 135 }
+    ],
+    "fullRefundHours": 24,
+    "applicationFeePercent": 30,
+    "fees": {
+      "garden": { "weeknight": 3000, "weekend": 4500 },
+      "banquette": { "weeknight": 2200, "weekend": 3200 },
+      "bar": { "weeknight": 1000, "weekend": 1800 }
+    }
+  }
+}

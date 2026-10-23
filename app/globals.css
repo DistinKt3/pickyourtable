@@ -1,0 +1,235 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Warm neutral surfaces plus one venue accent, set per venue on the
+ * widget root (--accent, --accent-dark, --on-accent). Light and dark are each tuned:
+ * dark mode is a dusk palette, not an inversion.
+ */
+
+:root {
+  color-scheme: light;
+  --surface-0: #f6f3ee;
+  --surface-1: #fffdf9;
+  --surface-2: #efeae2;
+  --surface-3: #e6dfd4;
+  --scrim: rgb(29 27 24 / 0.38);
+  --line: #e3dcd1;
+  --line-strong: #cbc1b2;
+  --ink: #1d1b18;
+  --ink-2: #4a453e;
+  --ink-3: #6b6459;
+  --danger: #a3362a;
+  --danger-surface: #f8e9e5;
+  --success: #2c6a45;
+  --success-surface: #e6f0e8;
+  --warning: #855700;
+  --warning-surface: #f7eeda;
+  --accent-base: var(--accent, #1f5a63);
+  --on-accent-base: var(--on-accent, #ffffff);
+  --accent-soft: color-mix(in oklab, var(--accent-base) 12%, var(--surface-1));
+  --shadow-sheet: 0 -1px 0 rgb(29 27 24 / 0.04), 0 -12px 40px rgb(29 27 24 / 0.12);
+  --shadow-pop: 0 1px 2px rgb(29 27 24 / 0.08), 0 8px 24px rgb(29 27 24 / 0.1);
+  --shadow-chip: 0 1px 2px rgb(29 27 24 / 0.1), 0 2px 8px rgb(29 27 24 / 0.06);
+  --plan-floor: #f1ece4;
+  --plan-floor-outdoor: #e7e2d6;
+  --plan-wall: #b9ae9e;
+  --plan-glass: #8fb3c4;
+  --plan-water: #dfe8ea;
+  --plan-furniture: #ded5c7;
+  --plan-furniture-line: #a99d8b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-0: #12110f;
+    --surface-1: #1b1916;
+    --surface-2: #24211d;
+    --surface-3: #2e2a25;
+    --scrim: rgb(0 0 0 / 0.55);
+    --line: #322e28;
+    --line-strong: #4a443b;
+    --ink: #f3efe8;
+    --ink-2: #cdc5ba;
+    --ink-3: #a1988b;
+    --danger: #f08f80;
+    --danger-surface: #3a1f1a;
+    --success: #8fd0a6;
+    --success-surface: #1b2e22;
+    --warning: #e8c071;
+    --warning-surface: #33290f;
+    --accent-base: var(--accent-dark, #86c5ca);
+    --on-accent-base: #10181a;
+    --shadow-sheet: 0 -1px 0 rgb(255 255 255 / 0.04), 0 -12px 40px rgb(0 0 0 / 0.5);
+    --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
+    --shadow-chip: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.3);
+    --plan-floor: #22201c;
+    --plan-floor-outdoor: #1c1b18;
+    --plan-wall: #5c544a;
+    --plan-glass: #4f7584;
+    --plan-water: #16202a;
+    --plan-furniture: #34302a;
+    --plan-furniture-line: #6d6559;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-0: #12110f;
+  --surface-1: #1b1916;
+  --surface-2: #24211d;
+  --surface-3: #2e2a25;
+  --scrim: rgb(0 0 0 / 0.55);
+  --line: #322e28;
+  --line-strong: #4a443b;
+  --ink: #f3efe8;
+  --ink-2: #cdc5ba;
+  --ink-3: #a1988b;
+  --danger: #f08f80;
+  --danger-surface: #3a1f1a;
+  --success: #8fd0a6;
+  --success-surface: #1b2e22;
+  --warning: #e8c071;
+  --warning-surface: #33290f;
+  --accent-base: var(--accent-dark, #86c5ca);
+  --on-accent-base: #10181a;
+  --shadow-sheet: 0 -1px 0 rgb(255 255 255 / 0.04), 0 -12px 40px rgb(0 0 0 / 0.5);
+  --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
+  --shadow-chip: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.3);
+  --plan-floor: #22201c;
+  --plan-floor-outdoor: #1c1b18;
+  --plan-wall: #5c544a;
+  --plan-glass: #4f7584;
+  --plan-water: #16202a;
+  --plan-furniture: #34302a;
+  --plan-furniture-line: #6d6559;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), "Iowan Old Style", Georgia, serif;
+
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent-base);
+  --color-on-accent: var(--on-accent-base);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-surface: var(--danger-surface);
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
+
+  --radius-control: 12px;
+  --radius-card: 18px;
+  --radius-sheet: 24px;
+
+  --shadow-sheet: var(--shadow-sheet);
+  --shadow-pop: var(--shadow-pop);
+  --shadow-chip: var(--shadow-chip);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --text-display-xl: 2.5rem;
+  --text-display-xl--line-height: 1.05;
+  --text-display-l: 2rem;
+  --text-display-l--line-height: 1.1;
+  --text-display-m: 1.625rem;
+  --text-display-m--line-height: 1.15;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background: var(--surface-0);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-feature-settings: "ss01", "cv11";
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent-base);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--accent-base) 28%, transparent);
+  }
+  button,
+  [role="button"] {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+@utility hairline {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

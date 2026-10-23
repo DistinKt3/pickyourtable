@@ -1,0 +1,108 @@
+{
+  "id": "halcyon",
+  "demo": true,
+  "name": "Halcyon",
+  "tagline": "Dining room on the water",
+  "timezone": "America/Los_Angeles",
+  "locale": "en-US",
+  "contact": {
+    "phone": "(415) 555-0142",
+    "email": "reservations@halcyon.example",
+    "address": "1 Harbor Walk, Demo Bay, CA"
+  },
+  "brand": { "accent": "#1F5A63", "accentDark": "#86C5CA", "onAccent": "#FFFFFF" },
+  "room": { "width": 20, "depth": 12, "wallHeight": 1.1, "ceilingHeight": 3.2 },
+  "walls": [
+    { "id": "north-glass", "from": [0, 0], "to": [20, 0], "kind": "glass" },
+    { "id": "east", "from": [20, 0], "to": [20, 12], "kind": "solid" },
+    { "id": "south-east", "from": [20, 12], "to": [4.4, 12], "kind": "solid" },
+    { "id": "entrance", "from": [4.4, 12], "to": [2.8, 12], "kind": "doorway" },
+    { "id": "south-west", "from": [2.8, 12], "to": [0, 12], "kind": "solid" },
+    { "id": "west-south", "from": [0, 12], "to": [0, 9.2], "kind": "solid" },
+    { "id": "terrace-doors", "from": [0, 9.2], "to": [0, 2.8], "kind": "sliding-door" },
+    { "id": "west-north", "from": [0, 2.8], "to": [0, 0], "kind": "solid" }
+  ],
+  "areas": [
+    { "id": "dining-room", "kind": "dining", "name": "Dining room", "polygon": [[0, 0], [20, 0], [20, 12], [0, 12]] },
+    { "id": "kitchen", "kind": "kitchen", "name": "Open kitchen", "polygon": [[8.4, 10.2], [15.6, 10.2], [15.6, 12], [8.4, 12]] },
+    { "id": "terrace", "kind": "terrace", "name": "Terrace", "polygon": [[-6.6, 0], [-0.2, 0], [-0.2, 12], [-6.6, 12]] },
+    { "id": "harbor-walk", "kind": "promenade", "polygon": [[-9, -1.6], [23, -1.6], [23, 0], [-9, 0]] }
+  ],
+  "fixtures": [
+    { "id": "pass", "kind": "pass", "x": 12, "z": 10.4, "width": 7, "depth": 0.4, "height": 1.1 },
+    { "id": "kitchen-line", "kind": "kitchen-line", "x": 12, "z": 11.45, "width": 6.6, "depth": 0.7, "height": 0.92 },
+    { "id": "host-stand", "kind": "host-stand", "x": 5.4, "z": 11.2, "width": 0.9, "depth": 0.5, "height": 1.05 },
+    { "id": "back-of-house", "kind": "back-of-house", "x": 1.1, "z": 10.9, "width": 2.2, "depth": 2.2, "height": 1.1 },
+    { "id": "service-station", "kind": "service-station", "x": 16.9, "z": 6.1, "width": 0.6, "depth": 1.6, "height": 0.95 },
+    { "id": "terrace-rail-north", "kind": "railing", "x": -3.4, "z": 0.04, "width": 6.4, "depth": 0.06, "height": 1.0 },
+    { "id": "terrace-rail-west", "kind": "railing", "x": -6.57, "z": 6, "width": 0.06, "depth": 12, "height": 1.0 },
+    { "id": "terrace-rail-south", "kind": "railing", "x": -3.4, "z": 11.96, "width": 6.4, "depth": 0.06, "height": 1.0 },
+    { "id": "terrace-planter-west", "kind": "planter", "x": -5.5, "z": 11.2, "width": 1.6, "depth": 0.6, "height": 0.55 },
+    { "id": "terrace-planter-east", "kind": "planter", "x": -1.3, "z": 11.2, "width": 1.6, "depth": 0.6, "height": 0.55 }
+  ],
+  "surroundings": { "ground": "stone", "water": { "side": "north", "at": -1.6 } },
+  "tiers": [
+    { "id": "window", "name": "Window", "color": "#2D6E8E", "colorDark": "#7DB4D1", "description": "Two-tops on the north glass, looking straight out over the water.", "bookable": true },
+    { "id": "booth", "name": "Booth", "color": "#9B4A3B", "colorDark": "#DE917F", "description": "Curved booths for four along the quiet east wall.", "bookable": true },
+    { "id": "counter", "name": "Chef's counter", "color": "#9A7124", "colorDark": "#E2BC6A", "description": "Seats at the pass, facing the open kitchen.", "bookable": true },
+    { "id": "terrace", "name": "Terrace", "color": "#55784A", "colorDark": "#9EC28A", "description": "Four-tops outside the sliding doors, open to the harbor.", "bookable": true },
+    { "id": "standard", "name": "Dining room", "color": "#8C857A", "colorDark": "#A49D92", "description": "Main-floor tables, seated by the host on arrival.", "bookable": false }
+  ],
+  "tables": [
+    { "id": "W1", "label": "Window 1", "tier": "window", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 1.8, "z": 1.2, "rotation": 0, "view": { "yaw": 350, "pitch": -4 }, "attributes": ["window", "water view", "corner"], "photoId": null },
+    { "id": "W2", "label": "Window 2", "tier": "window", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 4.6, "z": 1.2, "rotation": 0, "view": { "yaw": 0, "pitch": -4 }, "attributes": ["window", "water view", "wheelchair accessible"], "photoId": null },
+    { "id": "W3", "label": "Window 3", "tier": "window", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 7.4, "z": 1.2, "rotation": 0, "view": { "yaw": 0, "pitch": -4 }, "attributes": ["window", "water view"], "photoId": null },
+    { "id": "W4", "label": "Window 4", "tier": "window", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 10.2, "z": 1.2, "rotation": 0, "view": { "yaw": 0, "pitch": -4 }, "attributes": ["window", "water view"], "photoId": null },
+    { "id": "W5", "label": "Window 5", "tier": "window", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 13, "z": 1.2, "rotation": 0, "view": { "yaw": 5, "pitch": -4 }, "attributes": ["window", "water view", "wheelchair accessible"], "photoId": null },
+    { "id": "W6", "label": "Window 6", "tier": "window", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 15.8, "z": 1.2, "rotation": 0, "view": { "yaw": 10, "pitch": -4 }, "attributes": ["window", "water view"], "photoId": null },
+
+    { "id": "B1", "label": "Booth 1", "tier": "booth", "shape": "booth", "seats": 4, "minParty": 2, "maxParty": 4, "x": 18.8, "z": 2.4, "rotation": 270, "view": { "yaw": 300, "pitch": -3 }, "attributes": ["booth", "water view"], "photoId": null },
+    { "id": "B2", "label": "Booth 2", "tier": "booth", "shape": "booth", "seats": 4, "minParty": 2, "maxParty": 4, "x": 18.8, "z": 4.9, "rotation": 270, "view": { "yaw": 290, "pitch": -3 }, "attributes": ["booth", "quiet"], "photoId": null },
+    { "id": "B3", "label": "Booth 3", "tier": "booth", "shape": "booth", "seats": 4, "minParty": 2, "maxParty": 4, "x": 18.8, "z": 7.4, "rotation": 270, "view": { "yaw": 280, "pitch": -3 }, "attributes": ["booth", "quiet"], "photoId": null },
+    { "id": "B4", "label": "Booth 4", "tier": "booth", "shape": "booth", "seats": 4, "minParty": 2, "maxParty": 4, "x": 18.8, "z": 9.9, "rotation": 270, "view": { "yaw": 285, "pitch": -3 }, "attributes": ["booth", "kitchen view"], "photoId": null },
+
+    { "id": "C1", "label": "Counter 1", "tier": "counter", "shape": "counter", "seats": 2, "minParty": 1, "maxParty": 2, "x": 10.3, "z": 9.9, "rotation": 180, "width": 1.7, "depth": 0.6, "view": { "yaw": 180, "pitch": -8 }, "attributes": ["kitchen view"], "photoId": null },
+    { "id": "C2", "label": "Counter 2", "tier": "counter", "shape": "counter", "seats": 2, "minParty": 1, "maxParty": 2, "x": 12, "z": 9.9, "rotation": 180, "width": 1.7, "depth": 0.6, "view": { "yaw": 180, "pitch": -8 }, "attributes": ["kitchen view", "wheelchair accessible"], "photoId": null },
+    { "id": "C3", "label": "Counter 3", "tier": "counter", "shape": "counter", "seats": 2, "minParty": 1, "maxParty": 2, "x": 13.7, "z": 9.9, "rotation": 180, "width": 1.7, "depth": 0.6, "view": { "yaw": 180, "pitch": -8 }, "attributes": ["kitchen view"], "photoId": null },
+
+    { "id": "T1", "label": "Terrace 1", "tier": "terrace", "shape": "square", "seats": 4, "minParty": 2, "maxParty": 4, "x": -4.9, "z": 2.3, "rotation": 0, "view": { "yaw": 345, "pitch": -2 }, "attributes": ["outdoor", "water view", "heated"], "photoId": null },
+    { "id": "T2", "label": "Terrace 2", "tier": "terrace", "shape": "square", "seats": 4, "minParty": 2, "maxParty": 4, "x": -1.9, "z": 2.3, "rotation": 0, "view": { "yaw": 355, "pitch": -2 }, "attributes": ["outdoor", "water view", "heated"], "photoId": null },
+    { "id": "T3", "label": "Terrace 3", "tier": "terrace", "shape": "square", "seats": 4, "minParty": 2, "maxParty": 4, "x": -4.9, "z": 5.9, "rotation": 0, "view": { "yaw": 340, "pitch": -2 }, "attributes": ["outdoor", "water view"], "photoId": null },
+    { "id": "T4", "label": "Terrace 4", "tier": "terrace", "shape": "square", "seats": 4, "minParty": 2, "maxParty": 4, "x": -1.9, "z": 5.9, "rotation": 0, "view": { "yaw": 350, "pitch": -2 }, "attributes": ["outdoor", "water view"], "photoId": null },
+
+    { "id": "S1", "label": "Table 11", "tier": "standard", "shape": "square", "seats": 4, "minParty": 1, "maxParty": 4, "x": 3, "z": 3.9, "rotation": 0, "view": { "yaw": 0, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S2", "label": "Table 12", "tier": "standard", "shape": "square", "seats": 4, "minParty": 1, "maxParty": 4, "x": 6.2, "z": 3.9, "rotation": 0, "view": { "yaw": 0, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S3", "label": "Table 13", "tier": "standard", "shape": "square", "seats": 4, "minParty": 1, "maxParty": 4, "x": 9.4, "z": 3.9, "rotation": 0, "view": { "yaw": 0, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S4", "label": "Table 14", "tier": "standard", "shape": "square", "seats": 4, "minParty": 1, "maxParty": 4, "x": 12.6, "z": 3.9, "rotation": 0, "view": { "yaw": 0, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S5", "label": "Table 15", "tier": "standard", "shape": "round", "seats": 4, "minParty": 1, "maxParty": 4, "x": 4.6, "z": 6.9, "rotation": 0, "view": { "yaw": 0, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S6", "label": "Table 16", "tier": "standard", "shape": "rect", "seats": 4, "minParty": 1, "maxParty": 4, "x": 7.8, "z": 6.9, "rotation": 0, "view": { "yaw": 0, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S7", "label": "Table 17", "tier": "standard", "shape": "round", "seats": 4, "minParty": 1, "maxParty": 4, "x": 11, "z": 6.9, "rotation": 0, "view": { "yaw": 0, "pitch": -3 }, "attributes": [], "photoId": null },
+    { "id": "S8", "label": "Table 18", "tier": "standard", "shape": "square", "seats": 2, "minParty": 1, "maxParty": 2, "x": 14.2, "z": 6.9, "rotation": 0, "view": { "yaw": 0, "pitch": -3 }, "attributes": [], "photoId": null }
+  ],
+  "booking": {
+    "currency": "usd",
+    "slotMinutes": 15,
+    "holdMinutes": 8,
+    "minLeadMinutes": 60,
+    "bookingWindowDays": 60,
+    "weekendDays": [5, 6],
+    "maxParty": 6,
+    "dayparts": [
+      { "id": "lunch", "name": "Lunch", "days": [5, 6, 7], "start": "11:30", "end": "14:30" },
+      { "id": "dinner", "name": "Dinner", "days": [1, 2, 3, 4, 5, 6, 7], "start": "17:00", "end": "22:00" }
+    ],
+    "turnTimes": [
+      { "minParty": 1, "maxParty": 2, "minutes": 90 },
+      { "minParty": 3, "maxParty": 4, "minutes": 120 },
+      { "minParty": 5, "maxParty": 6, "minutes": 150 }
+    ],
+    "fullRefundHours": 24,
+    "applicationFeePercent": 30,
+    "fees": {
+      "window": { "weeknight": 2500, "weekend": 4000 },
+      "booth": { "weeknight": 2000, "weekend": 3000 },
+      "counter": { "weeknight": 1500, "weekend": 2500 },
+      "terrace": { "weeknight": 2000, "weekend": 3500 }
+    }
+  }
+}

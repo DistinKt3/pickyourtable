@@ -1,0 +1,12 @@
+# Supply-chain policy. See docs/SECURITY.md.
+# Exact versions only; nothing published less than 3 days ago; only allowlisted
+# packages may run install scripts.
+saveExact: true
+minimumReleaseAge: 4320
+allowBuilds:
+  sharp: true
+  esbuild: true
+  unrs-resolver: false
+overrides:
+  # drizzle-kit's legacy loader pins esbuild 0.18 (GHSA-67mh-4wv8-2f99).
+  "@esbuild-kit/core-utils>esbuild": "^0.28.2"
