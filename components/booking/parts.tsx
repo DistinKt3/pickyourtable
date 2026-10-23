@@ -63,7 +63,7 @@ export function SeatViewImage({
         </picture>
       )}
       {showTag && image.kind === "render" ? (
-        <span className="absolute top-3 left-3 inline-flex h-6 items-center rounded-full bg-black/45 px-2.5 text-[0.75rem] font-medium tracking-[0.02em] text-white backdrop-blur-[6px]">
+        <span className="absolute top-3 left-3 inline-flex h-6 items-center rounded-full bg-black/65 px-2.5 text-[0.75rem] font-medium tracking-[0.02em] text-white backdrop-blur-[6px]">
           Preview render
         </span>
       ) : null}

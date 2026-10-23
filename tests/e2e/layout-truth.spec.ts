@@ -53,7 +53,7 @@ for (const venueId of ["halcyon", "orchard-room"]) {
     await page.getByRole("radio", { name: "List" }).check({ force: true });
     const bookableTiers = new Set(venue.tiers.filter((t) => t.bookable).map((t) => t.id));
     for (const t of venue.tables.filter((x) => bookableTiers.has(x.tier))) {
-      await expect(page.getByRole("button", { name: new RegExp(`^${t.label},`) }).first()).toBeVisible();
+      await expect(page.getByRole("button", { name: new RegExp(`^${t.label}\\s?,`) }).first()).toBeVisible();
     }
   });
 }

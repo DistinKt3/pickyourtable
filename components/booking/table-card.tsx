@@ -135,7 +135,7 @@ export function TableCard({
             >
               <ChevronLeft className="size-5" aria-hidden />
             </SlideButton>
-            <span className="rounded-full bg-black/45 px-2.5 py-1 text-[0.8125rem] font-medium text-white tabular backdrop-blur-[6px]">
+            <span className="rounded-full bg-black/65 px-2.5 py-1 text-[0.8125rem] font-medium text-white tabular backdrop-blur-[6px]">
               {index + 1} of {deck.length}
             </span>
             <SlideButton
@@ -218,7 +218,7 @@ function SlideButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="pointer-events-auto inline-flex size-9 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-[6px] transition-opacity duration-150 hover:bg-black/60 disabled:opacity-0"
+      className="pointer-events-auto inline-flex size-9 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-[6px] transition-opacity duration-150 hover:bg-black/75 disabled:opacity-0"
     >
       {children}
     </button>

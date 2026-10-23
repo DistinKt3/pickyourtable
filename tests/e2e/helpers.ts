@@ -65,7 +65,7 @@ export async function pickSlot(page: Page, date: string, time: string, party = 2
 
 /** Taps a table in whichever room view is showing (2D plan, 3D labels or the list). */
 export async function tapTable(page: Page, label: string) {
-  const target = page.getByRole("button", { name: new RegExp(`^${label},`) }).first();
+  const target = page.getByRole("button", { name: new RegExp(`^${label}\\s?,`) }).first();
   await target.click();
   await expect(page.getByRole("heading", { name: label, exact: true }).first()).toBeVisible();
 }

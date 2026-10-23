@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-import { stateText, priceText, tableAriaLabel } from "@/components/room/views";
+import { priceText, stateText } from "@/components/room/views";
 import { cx } from "@/lib/format";
 import { type RoomData, visualState } from "@/lib/room/types";
 import { useRoom } from "@/lib/room/store";
@@ -54,7 +54,6 @@ export function ListView({ data }: { data: RoomData }) {
                         type="button"
                         onClick={() => select(t.id)}
                         aria-pressed={selected === t.id}
-                        aria-label={tableAriaLabel(venue, t, a, hasSlot)}
                         className={cx(
                           "group flex w-full items-center gap-3 rounded-card bg-surface-1 p-2 pr-3 text-left hairline transition-colors duration-150 hover:bg-surface-2",
                           selected === t.id && "shadow-[inset_0_0_0_2px_var(--accent-base)]",
@@ -64,14 +63,20 @@ export function ListView({ data }: { data: RoomData }) {
                           {t.image ? <SeatViewImage image={t.image} alt="" sizes="112px" showTag={false} /> : null}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className={cx("font-display text-[1.375rem] leading-tight", inactive && "text-ink-3")}>{t.label}</p>
+                          <p className={cx("font-display text-[1.375rem] leading-tight", inactive && "text-ink-3")}>
+                            {t.label}
+                            <span className="sr-only">, {tier.name}</span>
+                          </p>
                           <p className="truncate text-[0.9375rem] text-ink-3">
                             {t.seats} seats{t.attributes.length ? ` · ${t.attributes.join(", ")}` : ""}
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
                           {s === "available" ? (
-                            <p className="font-semibold tabular">{price}</p>
+                            <p className="font-semibold tabular">
+                              <span className="sr-only">{hasSlot ? "Available, " : "Bookable, "}</span>
+                              {price}
+                            </p>
                           ) : (
                             <p className="text-[0.9375rem] text-ink-3">{stateText(t, a)}</p>
                           )}

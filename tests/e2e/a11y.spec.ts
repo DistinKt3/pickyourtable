@@ -36,7 +36,7 @@ test("the whole booking flow works without WebGL and passes axe at every step", 
   await axe(page, "list with availability");
 
   await page
-    .getByRole("button", { name: /^Window 3,/ })
+    .getByRole("button", { name: /^Window 3\s?,/ })
     .first()
     .click();
   await expect(page.getByRole("heading", { name: "Window 3", exact: true }).first()).toBeVisible();
