@@ -47,7 +47,7 @@ function useMaterials(palette: Palette, shared: SharedUniforms, fade: FadeUnifor
     // Downlights glow whenever the ceiling shows, in daylight too.
     sit.userData.uniforms.uGlow = { value: 2.4 };
     sit.opacity = 0;
-    const glass = createGlassMaterial(shared, palette.glass, palette.glassOpacity);
+    const glass = createGlassMaterial(shared, palette.glass, palette.glassOpacity, palette.glassSheen);
     const ground = createGroundMaterial(fade);
     const water = createWaterMaterial(fade);
     const sky = createSkyMaterial();
@@ -69,6 +69,66 @@ function onFloorClick(e: ThreeEvent<MouseEvent>) {
   if (s.selected) s.select(null);
 }
 
+type Materials = ReturnType<typeof useMaterials>;
+
+/** Pushes the palette and the site's geometry into the shared uniforms and materials. */
+function applyPalette(
+  geo: ShellGeometry,
+  palette: Palette,
+  shared: SharedUniforms,
+  fade: FadeUniforms,
+  mats: Materials,
+  venue: Venue,
+) {
+  const [x0, z0, x1, z1] = geo.interiorRect;
+  shared.uInteriorRect.value.set(x0, z0, x1, z1);
+  shared.uInteriorColor.value.set(palette.interiorGlow);
+  shared.uInteriorStrength.value = palette.interiorGlowStrength;
+  shared.uGlow.value = palette.votiveGlow;
+  fade.uFadeRect.value.set(...geo.siteRect);
+  fade.uFade.value.set(0.6, 8.5);
+  fade.uHaze.value.set(80, 1400);
+  fade.uHazeColor.value.set(palette.sky.haze);
+  const w = mats.water.uniforms;
+  w.uDeep.value.set(palette.water.deep);
+  w.uShallow.value.set(palette.water.shallow);
+  w.uSkyZenith.value.set(palette.water.sky);
+  w.uSkyHorizon.value.set(palette.sky.horizon);
+  w.uSunDir.value.copy(keyLight(venue, palette).direction);
+  w.uSunColor.value.set(palette.light.key);
+  if (geo.shore) w.uShore.value.set(geo.shore.x, geo.shore.z, geo.shore.dx, geo.shore.dz);
+  const s = mats.sky.uniforms;
+  s.uSkyZenith.value.set(palette.sky.zenith);
+  s.uSkyHorizon.value.set(palette.sky.horizon);
+  s.uHazeColor.value.set(palette.sky.haze);
+  s.uFar.value.set(palette.sky.far);
+  s.uSilhouette.value = venue.surroundings.water ? 1 : 2;
+}
+
+/**
+ * Seat-view progress: walls rise to the ceiling, the ceiling and downlights fade in,
+ * and the page backdrop gives way to the real horizon.
+ */
+function applySit(
+  k: number,
+  venue: Venue,
+  shared: SharedUniforms,
+  fade: FadeUniforms,
+  mats: Materials,
+  sitMesh: THREE.Mesh | null,
+  sky: THREE.Mesh | null,
+  camera: THREE.Camera,
+) {
+  shared.uRise.value = k * (venue.room.ceilingHeight - venue.room.wallHeight);
+  const show = Math.min(1, Math.max(0, (k - 0.35) / 0.6));
+  mats.sit.opacity = show;
+  mats.sit.depthWrite = show > 0.98;
+  if (sitMesh) sitMesh.visible = show > 0.001;
+  fade.uBgMix.value = 1 - k;
+  mats.sky.uniforms.uBgMix.value = 1 - k;
+  if (sky) sky.position.copy(camera.position);
+}
+
 export function Shell({ venue, palette, shared, fade, modelUrl }: ShellProps) {
   const geo = useMemo<ShellGeometry>(() => buildShell(venue, palette, venue.brand.accent), [venue, palette]);
   useEffect(
@@ -83,47 +143,11 @@ export function Shell({ venue, palette, shared, fade, modelUrl }: ShellProps) {
   );
   const mats = useMaterials(palette, shared, fade);
   const rt = useRuntime();
-  const camera = useThree((s) => s.camera);
   const sitMesh = useRef<THREE.Mesh>(null);
   const sky = useRef<THREE.Mesh>(null);
 
-  useLayoutEffect(() => {
-    const [x0, z0, x1, z1] = geo.interiorRect;
-    shared.uInteriorRect.value.set(x0, z0, x1, z1);
-    shared.uInteriorColor.value.set(palette.interiorGlow);
-    shared.uInteriorStrength.value = palette.interiorGlowStrength;
-    shared.uGlow.value = palette.votiveGlow;
-    fade.uFadeRect.value.set(...geo.siteRect);
-    fade.uFade.value.set(1.2, 11);
-    fade.uHaze.value.set(80, 1400);
-    fade.uHazeColor.value.set(palette.sky.haze);
-    const w = mats.water.uniforms;
-    w.uDeep.value.set(palette.water.deep);
-    w.uShallow.value.set(palette.water.shallow);
-    w.uSkyZenith.value.set(palette.water.sky);
-    w.uSkyHorizon.value.set(palette.sky.horizon);
-    w.uSunDir.value.copy(keyLight(venue, palette).direction);
-    w.uSunColor.value.set(palette.light.key);
-    if (geo.shore) w.uShore.value.set(geo.shore.x, geo.shore.z, geo.shore.dx, geo.shore.dz);
-    const s = mats.sky.uniforms;
-    s.uSkyZenith.value.set(palette.sky.zenith);
-    s.uSkyHorizon.value.set(palette.sky.horizon);
-    s.uHazeColor.value.set(palette.sky.haze);
-    s.uFar.value.set(palette.sky.far);
-    s.uSilhouette.value = venue.surroundings.water ? 1 : 2;
-  }, [geo, palette, shared, fade, mats, venue]);
-
-  useFrame(() => {
-    const k = rt.sit;
-    shared.uRise.value = k * (venue.room.ceilingHeight - venue.room.wallHeight);
-    const show = Math.min(1, Math.max(0, (k - 0.35) / 0.6));
-    mats.sit.opacity = show;
-    mats.sit.depthWrite = show > 0.98;
-    if (sitMesh.current) sitMesh.current.visible = show > 0.001;
-    fade.uBgMix.value = 1 - k;
-    mats.sky.uniforms.uBgMix.value = 1 - k;
-    if (sky.current) sky.current.position.copy(camera.position);
-  });
+  useLayoutEffect(() => applyPalette(geo, palette, shared, fade, mats, venue), [geo, palette, shared, fade, mats, venue]);
+  useFrame((state) => applySit(rt.sit, venue, shared, fade, mats, sitMesh.current, sky.current, state.camera));
 
   return (
     <group>

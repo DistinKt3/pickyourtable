@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { planOrientation } from "@/lib/room/orientation";
 import { useRoom } from "@/lib/room/store";
@@ -43,44 +43,74 @@ export interface LightsProps {
   render?: boolean;
 }
 
-export function Lights({ venue, palette, shadowMapSize, render = false }: LightsProps) {
-  const key = useMemo(() => keyLight(venue, palette), [venue, palette]);
-  const dir = useRef<THREE.DirectionalLight>(null);
-  const spot = useRef<THREE.SpotLight>(null);
-  const hemi = useRef<THREE.HemisphereLight>(null);
-  const interior = useRef<THREE.PointLight[]>([]);
-  const gl = useThree((s) => s.gl);
-  const scene = useThree((s) => s.scene);
-  const invalidate = useThree((s) => s.invalidate);
-  const rt = useRuntime();
-  const selected = useRoom((s) => s.selected);
-  const sitting = useRoom((s) => s.sitting);
-  const exposure = palette.exposure;
+/** The lights as plain three.js objects with the code that drives them. */
+class LightRig {
+  readonly hemi = new THREE.HemisphereLight();
+  readonly key = new THREE.DirectionalLight();
+  readonly pool = new THREE.SpotLight();
+  readonly group = new THREE.Group();
+  interior: THREE.PointLight[] = [];
+  private palette: Palette | null = null;
+  private poolAnim = { k: 0, from: 0, to: 0, start: 0 };
 
-  useLayoutEffect(() => {
-    const l = dir.current;
-    if (!l) return;
-    l.position.copy(key.center).addScaledVector(key.direction, 60);
-    l.target.position.copy(key.center);
-    l.target.updateMatrixWorld();
-    const cam = l.shadow.camera;
-    cam.left = -key.extent;
-    cam.right = key.extent;
-    cam.top = key.extent;
-    cam.bottom = -key.extent;
+  constructor() {
+    this.key.castShadow = true;
+    this.key.shadow.bias = -0.0004;
+    this.key.shadow.normalBias = 0.025;
+    this.pool.angle = 0.55;
+    this.pool.penumbra = 1;
+    this.pool.decay = 1.3;
+    this.pool.distance = 9;
+    this.pool.intensity = 0;
+    this.group.add(this.hemi, this.key, this.key.target, this.pool, this.pool.target);
+  }
+
+  configure(venue: Venue, palette: Palette, k: KeyLight, shadowMapSize: number, render: boolean, gl: THREE.WebGLRenderer) {
+    this.palette = palette;
+    const e = palette.exposure;
+    this.hemi.color.set(palette.light.hemiSky);
+    this.hemi.groundColor.set(palette.light.hemiGround);
+    this.hemi.intensity = palette.light.hemi * e;
+    this.key.color.set(palette.light.key);
+    this.key.intensity = palette.light.keyIntensity * e;
+    this.key.shadow.radius = render ? 9 : 5;
+    this.key.shadow.intensity = palette.theme === "dark" ? 0.85 : 0.8;
+    this.key.position.copy(k.center).addScaledVector(k.direction, 60);
+    this.key.target.position.copy(k.center);
+    const cam = this.key.shadow.camera;
+    cam.left = -k.extent;
+    cam.right = k.extent;
+    cam.top = k.extent;
+    cam.bottom = -k.extent;
     cam.near = 20;
     cam.far = 100;
     cam.updateProjectionMatrix();
-    l.shadow.mapSize.set(shadowMapSize, shadowMapSize);
-    l.shadow.map?.dispose();
-    l.shadow.map = null;
+    this.key.shadow.mapSize.set(shadowMapSize, shadowMapSize);
+    this.key.shadow.map?.dispose();
+    this.key.shadow.map = null;
+    this.pool.color.set(palette.light.poolColor);
+    // Warm interior fill only for the build-time seat renders: point lights cost every
+    // fragment on a phone, so the live scene relies on the downlights and the palette.
+    for (const l of this.interior) this.group.remove(l);
+    this.interior = [];
+    if (render) {
+      const { width: W, depth: D, ceilingHeight: C } = venue.room;
+      const nx = Math.max(2, Math.round(W / 6));
+      const nz = Math.max(1, Math.round(D / 6));
+      for (let i = 0; i < nx; i++) {
+        for (let j = 0; j < nz; j++) {
+          const l = new THREE.PointLight(palette.light.interior, palette.light.interiorIntensity * e, 9, 1.6);
+          l.position.set((W / nx) * (i + 0.5), C - 0.4, (D / nz) * (j + 0.5));
+          this.interior.push(l);
+          this.group.add(l);
+        }
+      }
+    }
+    this.group.updateMatrixWorld(true);
     gl.shadowMap.needsUpdate = true;
-    invalidate();
-  }, [key, shadowMapSize, gl, invalidate]);
+  }
 
-  /* ---------------------------------------------------------- Environment */
-
-  useEffect(() => {
+  environment(gl: THREE.WebGLRenderer, scene: THREE.Scene, palette: Palette, k: KeyLight): () => void {
     const env = new THREE.Scene();
     const sky = new THREE.Mesh(
       new THREE.SphereGeometry(10, 32, 16),
@@ -109,12 +139,11 @@ export function Lights({ venue, palette, shadowMapSize, render = false }: Lights
       env.add(m);
     };
     box(9, 9, 2.2, new THREE.Vector3(0, 8, 0));
-    box(6, 3, 3, key.direction.clone().multiplyScalar(8));
+    box(6, 3, 3, k.direction.clone().multiplyScalar(8));
     const pmrem = new THREE.PMREMGenerator(gl);
     const target = pmrem.fromScene(env, 0.04);
     scene.environment = target.texture;
     scene.environmentIntensity = palette.light.env;
-    invalidate();
     return () => {
       scene.environment = null;
       target.dispose();
@@ -126,85 +155,69 @@ export function Lights({ venue, palette, shadowMapSize, render = false }: Lights
         }
       });
     };
-  }, [gl, scene, palette, key, invalidate]);
+  }
 
-  /* ------------------------------------------------------------ The pool */
-
-  const pool = useRef({ k: 0, from: 0, to: 0, start: 0, x: 0, z: 0 });
-  useEffect(() => {
-    const p = pool.current;
-    const t = selected && !sitting ? venue.tables.find((x) => x.id === selected) : null;
-    p.from = p.k;
-    p.to = t ? 1 : 0;
-    p.start = performance.now();
-    if (t) {
-      p.x = t.x;
-      p.z = t.z;
+  /** Moves the pool of light to a table, or fades it out. */
+  aim(table: { x: number; z: number } | null) {
+    const a = this.poolAnim;
+    a.from = a.k;
+    a.to = table ? 1 : 0;
+    a.start = performance.now();
+    if (table) {
+      this.pool.position.set(table.x, 3.4, table.z);
+      this.pool.target.position.set(table.x, 0, table.z);
+      this.pool.target.updateMatrixWorld();
     }
-    invalidate();
-  }, [selected, sitting, venue.tables, invalidate]);
+  }
 
-  useFrame(() => {
-    const p = pool.current;
-    const t = Math.min(1, (performance.now() - p.start) / 240);
-    p.k = p.from + (p.to - p.from) * easeInOut(t);
-    if (t < 1) invalidate();
-    const s = spot.current;
-    if (s) {
-      s.position.set(p.x, 3.4, p.z);
-      s.target.position.set(p.x, 0, p.z);
-      s.target.updateMatrixWorld();
-      s.intensity = palette.light.poolIntensity * exposure * p.k;
-    }
+  /** One frame; true while the pool is still fading. */
+  step(now: number, sit: number, render: boolean): boolean {
+    const p = this.palette;
+    if (!p) return false;
+    const a = this.poolAnim;
+    const t = Math.min(1, (now - a.start) / 240);
+    a.k = a.from + (a.to - a.from) * easeInOut(t);
+    const e = p.exposure;
+    this.pool.intensity = p.light.poolIntensity * e * a.k;
     // Everything else dims a touch under the pool, like a stage.
-    const dimming = 1 - 0.08 * p.k;
-    if (hemi.current) hemi.current.intensity = palette.light.hemi * exposure * dimming;
-    if (dir.current) dir.current.intensity = palette.light.keyIntensity * exposure * dimming;
-    const warm = render ? 1 : rt.sit;
-    for (const l of interior.current) if (l) l.intensity = palette.light.interiorIntensity * exposure * warm;
+    const dimming = 1 - 0.08 * a.k;
+    this.hemi.intensity = p.light.hemi * e * dimming;
+    this.key.intensity = p.light.keyIntensity * e * dimming;
+    const warm = render ? 1 : sit;
+    for (const l of this.interior) l.intensity = p.light.interiorIntensity * e * warm;
+    return t < 1;
+  }
+}
+
+export function Lights({ venue, palette, shadowMapSize, render = false }: LightsProps) {
+  const key = useMemo(() => keyLight(venue, palette), [venue, palette]);
+  const get = useThree((s) => s.get);
+  const invalidate = useThree((s) => s.invalidate);
+  const rt = useRuntime();
+  const selected = useRoom((s) => s.selected);
+  const sitting = useRoom((s) => s.sitting);
+  const [rig] = useState(() => new LightRig());
+
+  useLayoutEffect(() => {
+    rig.configure(venue, palette, key, shadowMapSize, render, get().gl);
+    invalidate();
+  }, [rig, venue, palette, key, shadowMapSize, render, get, invalidate]);
+
+  useEffect(() => {
+    const { gl, scene } = get();
+    const cleanup = rig.environment(gl, scene, palette, key);
+    invalidate();
+    return cleanup;
+  }, [rig, get, palette, key, invalidate]);
+
+  useEffect(() => {
+    rig.aim(selected && !sitting ? (venue.tables.find((x) => x.id === selected) ?? null) : null);
+    invalidate();
+  }, [rig, selected, sitting, venue.tables, invalidate]);
+
+  useFrame((state) => {
+    if (rig.step(performance.now(), rt.sit, render)) state.invalidate();
   });
 
-  const W = venue.room.width;
-  const D = venue.room.depth;
-  const C = venue.room.ceilingHeight;
-  // Warm interior fill only for the build-time seat renders: point lights cost every
-  // fragment on a phone, so the live scene relies on the downlights and the palette.
-  const points = useMemo(() => {
-    const out: [number, number, number][] = [];
-    if (!render) return out;
-    const nx = Math.max(2, Math.round(W / 6));
-    const nz = Math.max(1, Math.round(D / 6));
-    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) out.push([(W / nx) * (i + 0.5), C - 0.4, (D / nz) * (j + 0.5)]);
-    return out;
-  }, [W, D, C, render]);
-
-  return (
-    <>
-      <hemisphereLight ref={hemi} args={[palette.light.hemiSky, palette.light.hemiGround, palette.light.hemi * exposure]} />
-      <directionalLight
-        ref={dir}
-        color={palette.light.key}
-        intensity={palette.light.keyIntensity * exposure}
-        castShadow
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.025}
-        shadow-radius={render ? 9 : 5}
-        shadow-intensity={palette.theme === "dark" ? 0.75 : 0.62}
-      />
-      <spotLight ref={spot} color={palette.light.poolColor} intensity={0} angle={0.55} penumbra={1} decay={1.3} distance={9} />
-      {points.map((p, i) => (
-        <pointLight
-          key={i}
-          ref={(l) => {
-            if (l) interior.current[i] = l;
-          }}
-          position={p}
-          color={palette.light.interior}
-          intensity={0}
-          distance={9}
-          decay={1.6}
-        />
-      ))}
-    </>
-  );
+  return <primitive object={rig.group} />;
 }

@@ -1,0 +1,109 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import {
+  boxRect,
+  type LabelBox,
+  labelContent,
+  labelPriority,
+  PRIORITY,
+  rectsOverlap,
+  resolveLabels,
+  roundRobinOrder,
+} from "@/components/room/scene3d/labelsLayout";
+import { roomDataFromVenue } from "@/components/room/scene3d/roomData";
+import { tierOf } from "@/lib/room/types";
+import { parseVenue } from "@/lib/venue/load";
+
+const venue = parseVenue(readFileSync("venues/halcyon/venue.json", "utf8"), "halcyon");
+const data = roomDataFromVenue(venue);
+const table = (code: string) => data.tables.find((t) => t.id === code)!;
+
+const box = (code: string, x: number, y: number, priority: number, extra: Partial<LabelBox> = {}): LabelBox => ({
+  code,
+  priority,
+  x,
+  y,
+  width: 120,
+  height: 28,
+  offscreen: false,
+  forced: false,
+  depth: 10,
+  ...extra,
+});
+
+describe("label content", () => {
+  it("names the table, tier, seats, state and price", () => {
+    const w1 = table("W1");
+    const c = labelContent(w1, tierOf(venue, w1.tier), "available", {
+      code: "W1",
+      state: "available",
+      feeCents: 4000,
+      reason: null,
+    });
+    expect(c.title).toBe("Window 1");
+    expect(c.price).toBe("$40");
+    expect(c.accessibleName).toBe("Window 1, Window, 2 seats, available, $40");
+    expect(c.muted).toBe(false);
+  });
+
+  it("shows the lowest fee before a slot is chosen", () => {
+    const w1 = table("W1");
+    expect(labelContent(w1, tierOf(venue, w1.tier), "available", null).price).toBe("from $25");
+  });
+
+  it("mutes taken and wrong-size tables and gives standard tables no price", () => {
+    const b1 = table("B1");
+    const taken = labelContent(b1, tierOf(venue, b1.tier), "taken", { code: "B1", state: "taken", feeCents: 3000, reason: null });
+    expect(taken.muted).toBe(true);
+    expect(taken.accessibleName).toBe("Booth 1, Booth, 4 seats, taken");
+    const s1 = table("S1");
+    const quiet = labelContent(s1, tierOf(venue, s1.tier), "not_bookable", null);
+    expect(quiet.price).toBeNull();
+    expect(quiet.title).toBe("Table 11");
+  });
+});
+
+describe("collision pass", () => {
+  it("orders selected over hovered over available over other bookable over not bookable", () => {
+    expect(labelPriority("available", { selected: true, hovered: false })).toBe(PRIORITY.selected);
+    expect(labelPriority("taken", { selected: false, hovered: true })).toBe(PRIORITY.hovered);
+    expect(labelPriority("available", { selected: false, hovered: false })).toBe(PRIORITY.available);
+    expect(labelPriority("wrong_size", { selected: false, hovered: false })).toBe(PRIORITY.bookable);
+    expect(labelPriority("not_bookable", { selected: false, hovered: false })).toBe(PRIORITY.quiet);
+  });
+
+  it("never lets two shown labels overlap, and the higher priority wins", () => {
+    const boxes = [
+      box("A", 100, 100, PRIORITY.available),
+      box("B", 150, 105, PRIORITY.selected),
+      box("C", 400, 100, PRIORITY.quiet),
+    ];
+    const shown = resolveLabels(boxes, { width: 800, height: 600 });
+    expect([...shown].sort()).toEqual(["B", "C"]);
+  });
+
+  it("keeps a focused label visible even when it collides", () => {
+    const boxes = [box("A", 100, 100, PRIORITY.selected), box("F", 110, 100, PRIORITY.quiet, { forced: true })];
+    expect(resolveLabels(boxes, { width: 800, height: 600 }).has("F")).toBe(true);
+  });
+
+  it("holds under a dense random scatter", () => {
+    let seed = 7;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const boxes = Array.from({ length: 80 }, (_, i) => box(`T${i}`, rand() * 390, rand() * 844, 1 + Math.floor(rand() * 5)));
+    const shown = resolveLabels(boxes, { width: 390, height: 844 });
+    const rects = boxes.filter((b) => shown.has(b.code)).map(boxRect);
+    for (let i = 0; i < rects.length; i++)
+      for (let j = i + 1; j < rects.length; j++) expect(rectsOverlap(rects[i]!, rects[j]!)).toBe(false);
+  });
+
+  it("spreads tiers fairly when only some labels fit", () => {
+    const order = roundRobinOrder([
+      { code: "W1", group: "w", x: 0, y: 0 },
+      { code: "W2", group: "w", x: 10, y: 0 },
+      { code: "B1", group: "b", x: 5, y: 0 },
+    ]);
+    expect(order.get("W1")!).toBeLessThan(order.get("W2")!);
+    expect(order.get("B1")!).toBeLessThan(order.get("W2")!);
+  });
+});

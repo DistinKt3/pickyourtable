@@ -1,6 +1,6 @@
 "use client";
 
-import { EffectComposer, N8AO, SMAA, ToneMapping } from "@react-three/postprocessing";
+import { BrightnessContrast, EffectComposer, HueSaturation, N8AO, SMAA, ToneMapping } from "@react-three/postprocessing";
 import { useThree } from "@react-three/fiber";
 import { BlendFunction, Effect, ToneMappingMode } from "postprocessing";
 import { useEffect, useMemo } from "react";
@@ -72,6 +72,9 @@ export function Effects({ background, quality, aoIntensity, aoColor, render = fa
         <></>
       )}
       <ToneMapping mode={ToneMappingMode.AGX} />
+      {/* AgX is gentle at the top end; a touch of contrast and color keeps the clay crisp. */}
+      <BrightnessContrast brightness={0.02} contrast={0.14} />
+      <HueSaturation saturation={0.16} />
       <primitive object={backdrop} />
       {!render && quality < 2 ? <SMAA /> : <></>}
     </EffectComposer>

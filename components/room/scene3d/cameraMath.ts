@@ -204,8 +204,14 @@ export function overviewMargins(aspect: number): Margins {
  */
 export function defaultPose(venue: Venue, aspect: number): Pose & { bearing: number; pitch: number } {
   const b = planOrientation(venue, aspect);
-  const pose = fitPose(sitePoints(venue), b, DEFAULT_PITCH, ORBIT_FOV, aspect, overviewMargins(aspect));
-  return { ...pose, bearing: b, pitch: DEFAULT_PITCH };
+  const pitch = defaultPitch(aspect);
+  const pose = fitPose(sitePoints(venue), b, pitch, ORBIT_FOV, aspect, overviewMargins(aspect));
+  return { ...pose, bearing: b, pitch };
+}
+
+/** Portrait screens look a little more from above, so the long room fills the height. */
+export function defaultPitch(aspect: number): number {
+  return aspect < PORTRAIT_ASPECT ? DEFAULT_PITCH + 6 : DEFAULT_PITCH;
 }
 
 /** Distance limits: close enough to read a table, never past the whole site. */

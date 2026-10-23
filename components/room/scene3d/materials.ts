@@ -412,6 +412,7 @@ export function createGlassMaterial(
   shared: Pick<SharedUniforms, "uRise">,
   color: string,
   opacity: number,
+  sheenAmount = 1,
 ): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
     color,
@@ -425,15 +426,24 @@ export function createGlassMaterial(
   });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uRise = shared.uRise;
+    shader.uniforms.uSheen = { value: sheenAmount };
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", "#include <common>\nattribute float rise;\nuniform float uRise;")
       .replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed.y += rise * uRise;");
-    shader.fragmentShader = shader.fragmentShader.replace(
-      "#include <opaque_fragment>",
-      `#include <opaque_fragment>
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying float vGlassY;")
+      .replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvGlassY = (modelMatrix * vec4(transformed, 1.0)).y;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vGlassY;\nuniform float uRise;\nuniform float uSheen;")
+      .replace(
+        "#include <opaque_fragment>",
+        `#include <opaque_fragment>
 float glassFres = pow(1.0 - abs(dot(normalize(vViewPosition), normal)), 3.0);
-gl_FragColor.a = clamp(diffuseColor.a + glassFres * 0.5, 0.0, 0.85);`,
-    );
+// A soft sky reflection that brightens toward the top of each pane.
+float sheen = smoothstep(0.1, 1.1, vGlassY) * 0.35 * (1.0 - clamp(uRise, 0.0, 1.0)) + glassFres * 0.5;
+gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0), sheen * 0.35 * uSheen);
+gl_FragColor.a = clamp(diffuseColor.a + sheen * 0.45, 0.0, 0.85);`,
+      );
   };
   m.customProgramCacheKey = () => "pyt-glass";
   return m;

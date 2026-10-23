@@ -64,7 +64,7 @@ export function chairGeometry(c: Pick<FurnitureColors, "wood" | "upholstery" | "
   // Rear legs run on up into the back posts, raked back slightly.
   const rake = 0.07;
   for (const sx of [-lx, lx]) {
-    const g = post(legR * 0.8, legR, 0, 0.8, 6);
+    const g = post(legR * 0.8, legR, 0, 0.775, 6);
     g.applyMatrix4(new THREE.Matrix4().makeRotationX(rake));
     parts.push(paint(place(g, sx, 0, lz), c.wood, frame));
   }
@@ -146,7 +146,7 @@ function plateGeometry(color: string): THREE.BufferGeometry {
     [0.08, 0.001],
     [0, 0.001],
   ];
-  return paint(lathe(profile.reverse(), 14), color, GLAZE);
+  return paint(lathe(profile.reverse(), 22), color, GLAZE);
 }
 
 function wineGlassGeometry(color: string): THREE.BufferGeometry {
@@ -164,7 +164,7 @@ function wineGlassGeometry(color: string): THREE.BufferGeometry {
     [0.029, 0.152],
     [0.0, 0.11],
   ];
-  return paint(lathe(profile, 8), color, { roughness: 0.18, metalness: 0 });
+  return paint(lathe(profile, 14), color, { roughness: 0.18, metalness: 0 });
 }
 
 function votiveGeometry(color: string): THREE.BufferGeometry {
@@ -307,7 +307,7 @@ export function tableGeometry(
         32,
       );
       parts.push(paint(top, c.top, topSurface));
-      parts.push(pedestal(table.shape === "booth" ? 0.26 : Math.min(0.3, r * 0.6), c.base, METAL));
+      parts.push(pedestal(table.shape === "booth" ? 0.22 : Math.min(0.27, r * 0.55), c.base, METAL));
       if (table.shape === "booth") parts.push(boothBenchGeometry(r, c, arcDegrees));
       break;
     }
@@ -323,7 +323,7 @@ export function tableGeometry(
       parts.push(paint(place(slab(roundedRectShape(w, d, 0.03), TOP_THICKNESS, 0.009, 3), 0, topY, 0), c.top, topSurface));
       if (c.outdoor) parts.push(...legs(w, d, 0.06, c.base, METAL, false));
       else if (table.shape === "rect") parts.push(...legs(w, d, 0.07, c.wood, SATIN, true));
-      else parts.push(pedestal(w <= 0.72 ? 0.25 : 0.3, c.base, METAL));
+      else parts.push(pedestal(w <= 0.72 ? 0.21 : 0.26, c.base, METAL));
     }
   }
 

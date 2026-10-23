@@ -1,16 +1,16 @@
 "use client";
 
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { cx } from "@/lib/format";
 import { useRoom } from "@/lib/room/store";
 import { type RoomData, type RoomTable, tierOf, visualState } from "@/lib/room/types";
-import { labelAnchor } from "@/lib/venue/geometry";
+import { labelAnchor, type Vec3 } from "@/lib/venue/geometry";
 import { distanceOf } from "./cameraMath";
 import { type LabelBox, labelContent, labelPriority, PRIORITY, resolveLabels, roundRobinOrder } from "./labelsLayout";
 import type { Theme } from "./palette";
-import { type Runtime, useRuntime } from "./runtime";
+import { measureLabel, registerLabel, type LabelSlot, type Runtime, setFocused, useRuntime } from "./runtime";
 
 /**
  * Table labels as real HTML buttons over the canvas: always upright and screen
@@ -34,18 +34,13 @@ function TableLabel({ table, data, theme, rt }: { table: RoomTable; data: RoomDa
     const b = button.current;
     const p = pill.current;
     if (!b || !p) return;
-    const slot = { button: b, pill: p, width: p.offsetWidth, height: p.offsetHeight, shown: false };
-    rt.labels.set(table.id, slot);
-    const ro = new ResizeObserver(() => {
-      slot.width = p.offsetWidth;
-      slot.height = p.offsetHeight;
-      rt.labelsDirty = true;
-      rt.invalidate();
-    });
+    const slot: LabelSlot = { button: b, pill: p, width: p.offsetWidth, height: p.offsetHeight, shown: false };
+    const unregister = registerLabel(rt, table.id, slot);
+    const ro = new ResizeObserver(() => measureLabel(rt, slot));
     ro.observe(p);
     return () => {
       ro.disconnect();
-      rt.labels.delete(table.id);
+      unregister();
     };
   }, [rt, table.id]);
 
@@ -69,14 +64,12 @@ function TableLabel({ table, data, theme, rt }: { table: RoomTable; data: RoomDa
         if (useRoom.getState().hovered === table.id) hover(null);
       }}
       onFocus={() => {
-        rt.focused = table.id;
+        setFocused(rt, table.id);
         hover(table.id);
-        rt.invalidate();
       }}
       onBlur={() => {
-        if (rt.focused === table.id) rt.focused = null;
+        setFocused(rt, null, table.id);
         if (useRoom.getState().hovered === table.id) hover(null);
-        rt.invalidate();
       }}
     >
       <span
@@ -120,69 +113,77 @@ export function LabelLayer({ data, theme, rt, hidden }: { data: RoomData; theme:
 
 const v = new THREE.Vector3();
 
-/** Inside the canvas: projects every anchor, resolves collisions, writes positions. */
+/**
+ * One frame of labels: project every anchor (lifted with its table), rank them, run
+ * the collision pass and write transforms and visibility straight to the DOM.
+ */
+function projectLabels(
+  rt: Runtime,
+  data: RoomData,
+  anchors: Vec3[],
+  camera: THREE.Camera,
+  size: { width: number; height: number },
+) {
+  const st = useRoom.getState();
+  camera.updateMatrixWorld();
+  const hideAll = rt.sit > 0.02 || st.sitting != null;
+  const far =
+    distanceOf({ x: camera.position.x, y: camera.position.y, z: camera.position.z }, rt.camera.target) >
+    rt.overviewDistance * 1.12;
+  const boxes: LabelBox[] = [];
+  data.tables.forEach((t, i) => {
+    const slot = rt.labels.get(t.id);
+    if (!slot) return;
+    const a = anchors[i]!;
+    v.set(a.x, a.y + (rt.lift.get(t.id) ?? 0), a.z).project(camera);
+    const x = ((v.x + 1) / 2) * size.width;
+    const y = ((1 - v.y) / 2) * size.height;
+    const state = visualState(t, st.availability?.[t.id]);
+    let priority = labelPriority(state, { selected: st.selected === t.id, hovered: st.hovered === t.id });
+    // Zoomed far out, only the selected, hovered and available tables compete for room.
+    if (far && priority < PRIORITY.available) priority = -1;
+    const depth = camera.position.distanceTo(v.set(a.x, a.y, a.z));
+    boxes.push({
+      code: t.id,
+      priority,
+      x,
+      y,
+      width: slot.width,
+      height: slot.height,
+      offscreen: hideAll || priority < 0 || !Number.isFinite(x),
+      forced: rt.focused === t.id,
+      depth,
+    });
+    // The button is the pill plus 8 px of hit area on every side, at least 44 px.
+    const bw = Math.max(44, slot.width + 16);
+    const bh = Math.max(44, slot.height + 16);
+    slot.button.style.transform = `translate3d(${Math.round(x - bw / 2)}px, ${Math.round(y - bh / 2)}px, 0)`;
+  });
+  const order = roundRobinOrder(
+    boxes.map((b) => ({
+      code: b.code,
+      group: `${b.priority}:${data.tables.find((x) => x.id === b.code)!.tier}`,
+      x: b.x,
+      y: b.y,
+    })),
+  );
+  for (const b of boxes) b.order = order.get(b.code) ?? 0;
+  const shown = resolveLabels(boxes, size);
+  for (const b of boxes) {
+    const slot = rt.labels.get(b.code)!;
+    const show = shown.has(b.code);
+    if (show !== slot.shown || rt.labelsDirty) {
+      slot.shown = show;
+      slot.button.dataset.show = show ? "true" : "false";
+    }
+  }
+  rt.labelsDirty = false;
+}
+
+/** Inside the canvas: runs the label pass after the camera has moved, every rendered frame. */
 export function LabelProjector({ data }: { data: RoomData }) {
   const rt = useRuntime();
-  const camera = useThree((s) => s.camera);
-  const size = useThree((s) => s.size);
-  const anchors = useRef(data.tables.map((t) => labelAnchor(t)));
-  anchors.current = data.tables.map((t) => labelAnchor(t));
-
-  useFrame(() => {
-    const st = useRoom.getState();
-    camera.updateMatrixWorld();
-    const hideAll = rt.sit > 0.02 || st.sitting != null;
-    const far =
-      distanceOf({ x: camera.position.x, y: camera.position.y, z: camera.position.z }, rt.camera.target) >
-      rt.overviewDistance * 1.12;
-    const boxes: LabelBox[] = [];
-    data.tables.forEach((t, i) => {
-      const slot = rt.labels.get(t.id);
-      if (!slot) return;
-      const a = anchors.current[i]!;
-      v.set(a.x, a.y + (rt.lift.get(t.id) ?? 0), a.z).project(camera);
-      const x = ((v.x + 1) / 2) * size.width;
-      const y = ((1 - v.y) / 2) * size.height;
-      const state = visualState(t, st.availability?.[t.id]);
-      const selected = st.selected === t.id;
-      const hovered = st.hovered === t.id;
-      let priority = labelPriority(state, { selected, hovered });
-      if (far && priority < PRIORITY.available) priority = -1;
-      const depth = camera.position.distanceTo(v.set(a.x, a.y, a.z));
-      boxes.push({
-        code: t.id,
-        priority,
-        x,
-        y,
-        width: slot.width,
-        height: slot.height,
-        offscreen: hideAll || priority < 0 || !Number.isFinite(x),
-        forced: rt.focused === t.id,
-        depth,
-      });
-      // The button is the pill plus 8 px of hit area on every side, at least 44 px.
-      const bw = Math.max(44, slot.width + 16);
-      const bh = Math.max(44, slot.height + 16);
-      slot.button.style.transform = `translate3d(${Math.round(x - bw / 2)}px, ${Math.round(y - bh / 2)}px, 0)`;
-    });
-    const order = roundRobinOrder(
-      boxes.map((b) => {
-        const t = data.tables.find((x) => x.id === b.code)!;
-        return { code: b.code, group: `${b.priority}:${t.tier}`, x: b.x, y: b.y };
-      }),
-    );
-    for (const b of boxes) b.order = order.get(b.code) ?? 0;
-    const shown = resolveLabels(boxes, size);
-    for (const b of boxes) {
-      const slot = rt.labels.get(b.code)!;
-      const show = shown.has(b.code);
-      if (show !== slot.shown || rt.labelsDirty) {
-        slot.shown = show;
-        slot.button.dataset.show = show ? "true" : "false";
-      }
-    }
-    rt.labelsDirty = false;
-  }, 0);
-
+  const anchors = useMemo(() => data.tables.map((t) => labelAnchor(t)), [data.tables]);
+  useFrame((state) => projectLabels(rt, data, anchors, state.camera, state.size), 0);
   return null;
 }

@@ -248,7 +248,7 @@ function walls(
         out.glass.push(glassPart(alongWall(pane, A, s.dir, s.n, start, 0), stretch(SILL, H - HEAD)));
         const count = Math.max(1, Math.round(inner / 1.85));
         for (let i = 1; i < count; i++) {
-          const m = softBox(0.05, H - HEAD - SILL, 0.085, 0.008, 2);
+          const m = softBox(0.04, H - HEAD - SILL, 0.07, 0.008, 2);
           m.translate(0, SILL, 0);
           out.clay.push(
             paint(alongWall(m, A, s.dir, s.n, start + (inner * i) / count, 0), p.frame, METAL, { rise: stretch(SILL, H - HEAD) }),
@@ -459,7 +459,8 @@ function fixtures(
       }
       case "host-stand": {
         parts.push(paint(softBox(L, h - 0.04, D, 0.05), p.chairWood, SATIN));
-        parts.push(paint(place(softBox(L + 0.03, 0.04, D + 0.03, 0.014), 0, h - 0.04, 0), c.accent, SATIN));
+        const top = new THREE.Color(c.accent).lerp(new THREE.Color(p.wall), 0.35);
+        parts.push(paint(place(softBox(L + 0.03, 0.04, D + 0.03, 0.014), 0, h - 0.04, 0), top, SATIN));
         break;
       }
       case "back-of-house": {
@@ -496,11 +497,13 @@ function fixtures(
         parts.push(paint(softBox(L, h, D, 0.035), p.planter, MATTE));
         parts.push(paint(place(softBox(L - 0.08, 0.02, D - 0.08, 0.01), 0, h - 0.04, 0), p.soil, MATTE));
         if (L / D > 1.6) {
-          const n = Math.max(2, Math.ceil(L / 0.42));
+          // A clipped hedge: overlapping soft lobes with a level top.
+          const n = Math.max(3, Math.ceil(L / 0.2));
           for (let i = 0; i < n; i++) {
-            const tone = new THREE.Color(p.hedge).multiplyScalar(0.94 + hash(fi * 31 + i) * 0.12);
-            const x = -L / 2 + (L / n) * (i + 0.5);
-            parts.push(paint(place(blob((L / n) * 0.7, 0.26, D * 0.48, fi * 3 + i), x, h + 0.16, 0), tone, MATTE));
+            const tone = new THREE.Color(p.hedge).multiplyScalar(0.95 + hash(fi * 31 + i) * 0.1);
+            const x = -L / 2 + 0.16 + ((L - 0.32) / (n - 1)) * i;
+            const z = (hash(fi * 7 + i) - 0.5) * 0.06;
+            parts.push(paint(place(blob(0.22, 0.2, D * 0.4, fi * 3 + i), x, h + 0.13, z), tone, MATTE));
           }
         } else {
           parts.push(paint(post(0.05, 0.032, h - 0.04, h + 1.3, 10), p.trunk, MATTE));
@@ -732,9 +735,9 @@ function mergeGlass(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   let o = 0;
   for (const g of parts) {
     const n = g.attributes.position!.count;
-    pos.set(g.attributes.position!.array as Float32Array, o * 3);
-    nor.set(g.attributes.normal!.array as Float32Array, o * 3);
-    rise.set(g.attributes.rise!.array as Float32Array, o);
+    pos.set(g.attributes.position!.array, o * 3);
+    nor.set(g.attributes.normal!.array, o * 3);
+    rise.set(g.attributes.rise!.array, o);
     o += n;
     g.dispose();
   }

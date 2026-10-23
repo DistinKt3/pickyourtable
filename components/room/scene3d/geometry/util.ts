@@ -18,7 +18,7 @@ export const MATTE: Surface = { roughness: 0.9, metalness: 0 };
 export const SATIN: Surface = { roughness: 0.62, metalness: 0 };
 export const UPHOLSTERY: Surface = { roughness: 0.97, metalness: 0 };
 export const METAL: Surface = { roughness: 0.45, metalness: 0.3 };
-export const STEEL: Surface = { roughness: 0.36, metalness: 0.35 };
+export const STEEL: Surface = { roughness: 0.4, metalness: 0.12 };
 export const GLAZE: Surface = { roughness: 0.3, metalness: 0 };
 
 /** Procedural surface patterns drawn by the clay shader in world space. */

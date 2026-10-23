@@ -2,7 +2,7 @@
 
 import { PerformanceMonitor } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useRoom } from "@/lib/room/store";
 import type { RoomData } from "@/lib/room/types";
@@ -14,7 +14,7 @@ import { tablePlacements } from "./layout";
 import { Lights } from "./Lights";
 import { createFadeUniforms, createSharedUniforms } from "./materials";
 import type { Palette } from "./palette";
-import { useRuntime } from "./runtime";
+import { patchRuntime, type Runtime, useRuntime } from "./runtime";
 import { Shell } from "./Shell";
 import { Tables } from "./Tables";
 
@@ -48,38 +48,41 @@ export interface SceneProps {
   onReady?: () => void;
 }
 
+/** Renderer settings the scene relies on: shadows refresh on demand, the clear is transparent. */
+function setupRenderer(gl: THREE.WebGLRenderer) {
+  gl.shadowMap.autoUpdate = false;
+  gl.shadowMap.needsUpdate = true;
+  gl.setClearColor(0x000000, 0);
+}
+
+function refreshShadows(gl: THREE.WebGLRenderer) {
+  gl.shadowMap.needsUpdate = true;
+}
+
 export function Scene({ data, palette, background, reducedMotion, onReady }: SceneProps) {
   const rt = useRuntime();
-  const gl = useThree((s) => s.gl);
+  const get = useThree((s) => s.get);
   const invalidate = useThree((s) => s.invalidate);
   const setDpr = useThree((s) => s.setDpr);
   const placements = useMemo(() => tablePlacements(data.venue), [data.venue]);
   const shared = useMemo(() => createSharedUniforms(), []);
   const fade = useMemo(() => createFadeUniforms(), []);
   const [quality, setQuality] = useState<Quality>(2);
-  const [shadowVersion, setShadowVersion] = useState(0);
+  const [ghostVersion, setGhostVersion] = useState(0);
 
-  rt.invalidate = invalidate;
-
-  useEffect(() => {
-    gl.shadowMap.autoUpdate = false;
-    gl.shadowMap.needsUpdate = true;
-    gl.setClearColor(0x000000, 0);
-  }, [gl]);
+  useLayoutEffect(() => {
+    patchRuntime(rt, { invalidate });
+    setupRenderer(get().gl);
+  }, [rt, invalidate, get]);
 
   useEffect(() => {
     setDpr(Math.min(window.devicePixelRatio || 1, DPR[quality]));
   }, [quality, setDpr]);
 
   const onShadowsChanged = useCallback(() => {
-    gl.shadowMap.needsUpdate = true;
-    setShadowVersion((v) => v + 1);
-  }, [gl]);
-
-  useEffect(() => {
-    gl.shadowMap.needsUpdate = true;
-    setShadowVersion((v) => v + 1);
-  }, [palette, gl]);
+    refreshShadows(get().gl);
+    setGhostVersion((v) => v + 1);
+  }, [get]);
 
   return (
     <>
@@ -102,9 +105,9 @@ export function Scene({ data, palette, background, reducedMotion, onReady }: Sce
         />
         <ContactShadows
           venue={data.venue}
-          version={shadowVersion}
+          version={`${palette.theme}:${ghostVersion}:${data.modelUrl ?? ""}`}
           opacity={palette.contactShadow}
-          resolution={quality === 0 ? 512 : 1024}
+          resolution={quality === 0 ? 1024 : 2048}
         />
         <LabelProjector data={data} />
         <Ready onReady={onReady} />
@@ -115,19 +118,31 @@ export function Scene({ data, palette, background, reducedMotion, onReady }: Sce
   );
 }
 
+function captureStats(rt: Runtime, gl: THREE.WebGLRenderer) {
+  rt.stats = { drawCalls: gl.info.render.calls, triangles: gl.info.render.triangles };
+}
+
+function setInfoAutoReset(gl: THREE.WebGLRenderer, on: boolean) {
+  gl.info.autoReset = on;
+}
+
 /** Snapshot of renderer.info for the whole frame, including the post passes. */
 function Stats() {
-  const gl = useThree((s) => s.gl);
+  const get = useThree((s) => s.get);
   const rt = useRuntime();
   useEffect(() => {
-    gl.info.autoReset = false;
-    return () => void (gl.info.autoReset = true);
-  }, [gl]);
-  useFrame(() => gl.info.reset(), -100);
-  useFrame(() => {
-    rt.stats = { drawCalls: gl.info.render.calls, triangles: gl.info.render.triangles };
-  }, 100);
+    const { gl } = get();
+    setInfoAutoReset(gl, false);
+    return () => setInfoAutoReset(gl, true);
+  }, [get]);
+  useFrame((state) => state.gl.info.reset(), -100);
+  useFrame((state) => captureStats(rt, state.gl), 100);
   return null;
+}
+
+function markReady(rt: Runtime) {
+  rt.ready = true;
+  if (window.__pytScene) window.__pytScene.ready = true;
 }
 
 /**
@@ -135,44 +150,56 @@ function Stats() {
  * ready: the first frame the lead cross-fades in is final, with no shader hitch.
  */
 function Ready({ onReady }: { onReady?: () => void }) {
-  const gl = useThree((s) => s.gl);
-  const scene = useThree((s) => s.scene);
-  const camera = useThree((s) => s.camera);
+  const get = useThree((s) => s.get);
   const invalidate = useThree((s) => s.invalidate);
   const rt = useRuntime();
-  const frames = useRef(-1);
-  const done = useRef(false);
-  const cb = useRef(onReady);
-  cb.current = onReady;
+  const [phase] = useState(() => ({ frames: -1, done: false }));
+  const callback = useRef(onReady);
+  useEffect(() => {
+    callback.current = onReady;
+  }, [onReady]);
 
   useEffect(() => {
     let cancelled = false;
-    void gl
-      .compileAsync(scene, camera)
-      .catch(() => undefined)
-      .then(() => {
-        if (cancelled) return;
-        frames.current = 0;
-        invalidate();
-      });
+    const { gl, scene, camera } = get();
+    const compile = async () => {
+      try {
+        await gl.compileAsync(scene, camera);
+      } catch {
+        // Compiling up front is an optimization; the first frame compiles anyway.
+      }
+      if (cancelled) return;
+      startCounting(phase);
+      invalidate();
+    };
+    void compile();
     return () => {
       cancelled = true;
     };
-  }, [gl, scene, camera, invalidate]);
+  }, [get, invalidate, phase]);
 
-  useFrame(() => {
-    if (done.current || frames.current < 0) return;
-    frames.current += 1;
-    if (frames.current < 3) {
-      invalidate();
-      return;
+  useFrame((state) => {
+    const step = countFrame(phase);
+    if (step === "more") state.invalidate();
+    else if (step === "now") {
+      markReady(rt);
+      callback.current?.();
     }
-    done.current = true;
-    rt.ready = true;
-    if (window.__pytScene) window.__pytScene.ready = true;
-    cb.current?.();
   }, 200);
   return null;
+}
+
+function startCounting(phase: { frames: number; done: boolean }) {
+  phase.frames = 0;
+}
+
+/** "more" until three frames have rendered after compiling, then "now" once, then "idle". */
+function countFrame(phase: { frames: number; done: boolean }): "more" | "now" | "idle" {
+  if (phase.done || phase.frames < 0) return "idle";
+  phase.frames += 1;
+  if (phase.frames < 3) return "more";
+  phase.done = true;
+  return "now";
 }
 
 /** `window.__pytScene` while mounted: what the lead's layout-truth and label tests read. */

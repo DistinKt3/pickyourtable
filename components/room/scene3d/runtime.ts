@@ -104,3 +104,37 @@ export function readSurfaceColor(fallback: string): string {
   const v = getComputedStyle(document.documentElement).getPropertyValue("--surface-0").trim();
   return /^#[0-9a-f]{6}$/i.test(v) ? v : fallback;
 }
+
+/**
+ * The runtime is an external, mutable system (like the three.js scene it describes),
+ * so components change it only through these functions, never by assignment in a
+ * component body.
+ */
+export function patchRuntime(rt: Runtime, patch: Partial<Runtime>): void {
+  Object.assign(rt, patch);
+}
+
+export function registerLabel(rt: Runtime, code: string, slot: LabelSlot): () => void {
+  rt.labels.set(code, slot);
+  return () => {
+    if (rt.labels.get(code) === slot) rt.labels.delete(code);
+  };
+}
+
+export function measureLabel(rt: Runtime, slot: LabelSlot): void {
+  slot.width = slot.pill.offsetWidth;
+  slot.height = slot.pill.offsetHeight;
+  rt.labelsDirty = true;
+  rt.invalidate();
+}
+
+export function setFocused(rt: Runtime, code: string | null, only?: string): void {
+  if (code === null && only !== undefined && rt.focused !== only) return;
+  rt.focused = code;
+  rt.invalidate();
+}
+
+export function registerGroup(rt: Runtime, code: string, group: THREE.Object3D | null): void {
+  if (group) rt.groups.set(code, group);
+  else rt.groups.delete(code);
+}
