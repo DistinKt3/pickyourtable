@@ -72,7 +72,7 @@ export function Plan2D(props: Plan2DProps) {
     [venue],
   );
   return (
-    <div className={cx("plan-root relative size-full overflow-hidden", props.className)}>
+    <div className={cx("plan-root grid size-full grid-cols-1 grid-rows-1 overflow-hidden", props.className)}>
       <PlanBox {...props} frame={frames.landscape} variant="landscape" />
       <PlanBox {...props} frame={frames.portrait} variant="portrait" />
     </div>
@@ -98,7 +98,7 @@ function PlanBox({
   const uid = useId().replace(/:/g, "");
   const boxRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLElement>(null);
-  const [box, setBox] = useState<{ w: number; h: number; ow: number; oh: number } | null>(null);
+  const [box, setBox] = useState<{ w: number; h: number; left: number; top: number; ow: number; oh: number } | null>(null);
   const shapes = useMemo(() => tables.map((t) => ({ table: t, shape: tableShape(t) })), [tables]);
   const walls = useMemo(() => wallShapes(venue), [venue]);
   const water = useMemo(() => waterShape(venue), [venue]);
@@ -116,35 +116,45 @@ function PlanBox({
     const el = boxRef.current;
     const outer = outerRef.current;
     if (!el || !outer) return;
+    // offsetWidth ignores the focus transform, so labels are laid out at the true scale.
     const ro = new ResizeObserver(() => {
-      const r = el.getBoundingClientRect();
-      const o = outer.getBoundingClientRect();
-      setBox(r.width > 0 ? { w: r.width, h: r.height, ow: o.width, oh: o.height } : null);
+      setBox(
+        el.offsetWidth > 0
+          ? {
+              w: el.offsetWidth,
+              h: el.offsetHeight,
+              left: el.offsetLeft,
+              top: el.offsetTop,
+              ow: outer.clientWidth,
+              oh: outer.clientHeight,
+            }
+          : null,
+      );
     });
     ro.observe(el);
     ro.observe(outer);
     return () => ro.disconnect();
   }, []);
 
-  const modes = useLabelModes(boxRef, box, tables, views, selected ?? null, hovered ?? null, frame);
+  const modes = useLabelModes(boxRef, box, tables, views, selected ?? null, hovered ?? null, frame, namedAreas);
 
   // Keep the focused table visible above the sheet: scale up slightly and pan.
-  const transform = useMemo(() => {
-    if (!focus || !box) return "none";
+  const { transform, zoom } = useMemo(() => {
+    if (!focus || !box) return { transform: "none", zoom: 1 };
     const t = tables.find((x) => x.id === focus.code);
-    if (!t) return "none";
+    if (!t) return { transform: "none", zoom: 1 };
     const visibleH = Math.max(160, box.oh - focus.bottomInset);
-    const zoom = Math.min(1.8, Math.max(1.15, (box.oh / visibleH) * 1.05));
+    const z = Math.min(1.45, Math.max(1.15, (box.oh / visibleH) * 0.6));
     const p = project(frame, { x: t.x, z: t.z });
     const px = (p.left / 100) * box.w;
     const py = (p.top / 100) * box.h;
-    const boxLeft = (box.ow - box.w) / 2;
-    const boxTop = (box.oh - box.h) / 2;
+    const boxLeft = box.left;
+    const boxTop = box.top;
     const targetX = box.ow / 2;
     const targetY = visibleH / 2;
-    const tx = targetX - (boxLeft + px * zoom);
-    const ty = targetY - (boxTop + py * zoom);
-    return `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${zoom.toFixed(3)})`;
+    const tx = targetX - (boxLeft + px * z);
+    const ty = targetY - (boxTop + py * z);
+    return { transform: `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${z.toFixed(3)})`, zoom: z };
   }, [focus, box, tables, frame]);
 
   const anySelected = Boolean(selected);
@@ -153,7 +163,10 @@ function PlanBox({
     <section
       ref={outerRef}
       aria-label={ariaLabel}
-      className={cx("absolute inset-0 items-center justify-center", variant === "portrait" ? "plan-portrait" : "plan-landscape")}
+      className={cx(
+        "relative col-start-1 row-start-1 min-h-0 min-w-0 justify-center",
+        variant === "portrait" ? "plan-portrait items-start" : "plan-landscape items-center",
+      )}
     >
       <div
         ref={boxRef}
@@ -163,6 +176,7 @@ function PlanBox({
           width: `min(100cqw, calc(100cqh * ${frame.aspect.toFixed(4)}))`,
           transform: focus && transform !== "none" ? transform : undefined,
           transitionDuration: reducedMotion ? "0ms" : undefined,
+          ["--plan-zoom" as string]: zoom,
         }}
         data-plan={variant}
         data-bearing={frame.bearing}
@@ -178,6 +192,20 @@ function PlanBox({
             <pattern id={`hatch-${uid}`} width="0.12" height="0.12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
               <line x1="0" y1="0" x2="0" y2="0.12" stroke="var(--line-strong)" strokeWidth="0.03" />
             </pattern>
+            {water ? (
+              <linearGradient
+                id={`water-${uid}`}
+                gradientUnits="userSpaceOnUse"
+                x1={water.shore.x1}
+                y1={water.shore.z1}
+                x2={water.shore.x2}
+                y2={water.shore.z2}
+              >
+                <stop offset="0" stopColor="var(--surface-1)" stopOpacity="0.55" />
+                <stop offset="0.35" stopColor="var(--surface-1)" stopOpacity="0" />
+                <stop offset="1" stopColor="var(--plan-glass)" stopOpacity="0.18" />
+              </linearGradient>
+            ) : null}
             <radialGradient id={`glow-${uid}`}>
               <stop offset="0" stopColor="var(--accent-base)" stopOpacity="0.22" />
               <stop offset="1" stopColor="var(--accent-base)" stopOpacity="0" />
@@ -187,16 +215,7 @@ function PlanBox({
             {water ? (
               <g aria-hidden>
                 <path d={water.path} fill="var(--plan-water)" />
-                {water.waves.map((w) => (
-                  <line
-                    key={`${w.x1},${w.z1}`}
-                    {...{ x1: w.x1, y1: w.z1, x2: w.x2, y2: w.z2 }}
-                    stroke="var(--plan-glass)"
-                    strokeWidth="0.035"
-                    strokeLinecap="round"
-                    opacity="0.45"
-                  />
-                ))}
+                <path d={water.path} fill={`url(#water-${uid})`} />
               </g>
             ) : null}
             <g aria-hidden>
@@ -249,7 +268,11 @@ function PlanBox({
           {namedAreas.map((a) => (
             <span
               key={a.id}
-              className="absolute -translate-x-1/2 -translate-y-1/2 text-[0.6875rem] font-medium tracking-[0.12em] whitespace-nowrap text-ink-3 uppercase"
+              data-area={a.id}
+              className={cx(
+                "absolute -translate-x-1/2 -translate-y-1/2 text-[0.6875rem] font-medium tracking-[0.12em] whitespace-nowrap text-ink-3 uppercase transition-opacity duration-200",
+                modes[`area:${a.id}`] === "hidden" ? "opacity-0" : "opacity-100",
+              )}
               style={{ left: `${a.at.left}%`, top: `${a.at.top}%` }}
             >
               {a.name}
@@ -265,7 +288,7 @@ function PlanBox({
                 code={t.id}
                 view={view}
                 at={at}
-                mode={modes[t.id] ?? (view.priority >= 2 ? "compact" : "hidden")}
+                mode={modes[t.id] ?? (selected === t.id ? "full" : view.priority >= 2 ? "compact" : "hidden")}
                 selected={selected === t.id}
               />
             );
@@ -527,29 +550,39 @@ function PlanLabel({
   selected: boolean;
 }) {
   const inactive = view.faded || view.muted;
+  const tone = selected ? "bg-ink text-surface-1" : inactive ? "bg-surface-1/90 text-ink-3" : "bg-surface-1 text-ink";
   return (
     <span
       data-label={code}
       data-mode={mode}
       className={cx(
-        "absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 transition-opacity duration-200",
+        "absolute flex flex-col items-center gap-0.5 transition-[opacity,scale] duration-200 [scale:calc(1/var(--plan-zoom,1))] [translate:-50%_-50%]",
         mode === "hidden" ? "opacity-0" : "opacity-100",
       )}
       style={{ left: `${at.left}%`, top: `${at.top}%`, zIndex: selected ? 3 : view.priority }}
     >
       <span
+        data-variant="full"
         className={cx(
-          "inline-flex h-6 items-center gap-1 rounded-full px-2 text-[0.8125rem] leading-none font-medium whitespace-nowrap tabular shadow-chip",
-          selected ? "bg-ink text-surface-1" : inactive ? "bg-surface-1/90 text-ink-3" : "bg-surface-1 text-ink",
+          "flex-col items-center rounded-[11px] px-2 py-1 leading-[1.15] whitespace-nowrap tabular shadow-chip",
+          tone,
+          mode === "full" ? "flex" : "hidden",
         )}
       >
-        <span data-variant="full" className={mode === "full" ? "contents" : "hidden"}>
-          <span>{view.label}</span>
-          {view.detail ? <span className={selected ? "opacity-75" : "text-ink-3"}>{view.detail}</span> : null}
-        </span>
-        <span data-variant="compact" className={mode === "full" ? "hidden" : "contents"}>
-          <span>{view.shortDetail ?? view.short}</span>
-        </span>
+        <span className="text-[0.8125rem] font-medium">{view.label}</span>
+        {view.detail ? (
+          <span className={cx("text-[0.75rem]", selected ? "opacity-75" : inactive ? "" : "text-ink-2")}>{view.detail}</span>
+        ) : null}
+      </span>
+      <span
+        data-variant="compact"
+        className={cx(
+          "h-6 items-center rounded-full px-2 text-[0.8125rem] leading-none font-medium whitespace-nowrap tabular shadow-chip",
+          tone,
+          mode === "full" ? "hidden" : "inline-flex",
+        )}
+      >
+        {view.shortDetail ?? view.short}
       </span>
       {view.badge && mode !== "hidden" ? (
         <span
@@ -576,7 +609,7 @@ function Compass({ bearing }: { bearing: number }) {
   const a = (-bearing * Math.PI) / 180;
   const tip = { x: Math.sin(a), y: -Math.cos(a) };
   return (
-    <span aria-hidden className="pointer-events-none absolute right-1.5 bottom-1.5 flex size-8 items-center justify-center">
+    <span aria-hidden className="pointer-events-none absolute top-1.5 right-1.5 flex size-8 items-center justify-center">
       <svg viewBox="-12 -12 24 24" className="size-8 text-ink-3">
         <circle r="11" fill="var(--surface-1)" stroke="var(--line)" strokeWidth="1" />
         <path
@@ -600,9 +633,13 @@ function Compass({ bearing }: { bearing: number }) {
 }
 
 /**
- * Collision pass: highest priority first, each label takes its full form if it fits,
- * else its compact form, else hides. Runs on resize and when states change.
+ * Collision pass. Small plans (phones) show compact pills and the full label only
+ * for the selected table. Larger plans show full labels, but a tier whose labels
+ * cannot all fit goes compact as a group, so neighbors never alternate between
+ * styles. Anything that still collides, or would leave the plan, hides.
  */
+const COMPACT_BELOW_PX_PER_M = 30;
+
 function useLabelModes(
   boxRef: React.RefObject<HTMLDivElement | null>,
   box: { w: number; h: number } | null,
@@ -611,67 +648,94 @@ function useLabelModes(
   selected: string | null,
   hovered: string | null,
   frame: PlanFrame,
+  areas: { id: string; at: { left: number; top: number } }[],
 ): Record<string, LabelMode> {
   const [modes, setModes] = useState<Record<string, LabelMode>>({});
   useEffect(() => {
     const el = boxRef.current;
     if (!el || !box) return;
-    const measure = (code: string, variant: "full" | "compact") => {
-      const node = el.querySelector<HTMLElement>(`[data-label="${code}"] [data-variant="${variant}"]`);
-      if (!node) return 0;
-      // Hidden variants report zero; measure a clone off-screen.
+    const size = (selector: string) => {
+      const node = el.querySelector<HTMLElement>(selector);
+      if (!node) return { w: 0, h: 0 };
       const clone = node.cloneNode(true) as HTMLElement;
-      clone.className = "";
-      const pill = node.parentElement!.cloneNode(false) as HTMLElement;
-      pill.style.position = "absolute";
-      pill.style.visibility = "hidden";
-      pill.style.left = "-9999px";
-      pill.appendChild(clone);
-      el.appendChild(pill);
-      const w = pill.getBoundingClientRect().width;
-      pill.remove();
-      return w;
+      clone.classList.remove("hidden");
+      clone.classList.add(selector.includes("full") ? "flex" : "inline-flex");
+      clone.style.position = "absolute";
+      clone.style.visibility = "hidden";
+      clone.style.left = "-9999px";
+      el.appendChild(clone);
+      const r = clone.getBoundingClientRect();
+      clone.remove();
+      return { w: r.width, h: r.height };
     };
+    type Rect = { x1: number; y1: number; x2: number; y2: number };
+    const GAP = 3;
+    const rectAt = (left: number, top: number, w: number, h: number): Rect => {
+      const px = (left / 100) * box.w;
+      const py = (top / 100) * box.h;
+      return { x1: px - w / 2 - GAP, y1: py - h / 2 - GAP, x2: px + w / 2 + GAP, y2: py + h / 2 + GAP };
+    };
+    const hits = (r: Rect, placed: Rect[]) => placed.some((q) => r.x1 < q.x2 && r.x2 > q.x1 && r.y1 < q.y2 && r.y2 > q.y1);
+    const inside = (r: Rect) => r.x1 >= -GAP && r.x2 <= box.w + GAP && r.y1 >= -GAP && r.y2 <= box.h + GAP;
+
     const order = tables
       .filter((t) => views[t.id])
       .map((t) => {
         const v = views[t.id]!;
         const p = selected === t.id ? 100 : hovered === t.id ? 50 : v.priority;
-        return { t, v, p };
+        const at = project(frame, { x: t.x, z: t.z });
+        const badge = v.badge ? 22 : 0;
+        const full = size(`[data-label="${t.id}"] [data-variant="full"]`);
+        const compact = size(`[data-label="${t.id}"] [data-variant="compact"]`);
+        return {
+          t,
+          p,
+          full: rectAt(at.left, at.top, full.w, full.h + badge),
+          compact: rectAt(at.left, at.top, compact.w, compact.h + badge),
+        };
       })
       .sort((a, b) => b.p - a.p);
-    const placed: { x1: number; y1: number; x2: number; y2: number }[] = [];
+
+    const small = box.w / frame.viewBox.w < COMPACT_BELOW_PX_PER_M;
+    const compactTiers = new Set<string>();
+    if (!small) {
+      const trial: Rect[] = [];
+      for (const o of order) {
+        if (o.p <= 0 || o.p >= 50) continue;
+        if (hits(o.full, trial) || !inside(o.full)) compactTiers.add(o.t.tier);
+        else trial.push(o.full);
+      }
+    }
+
+    const placed: Rect[] = [];
     const next: Record<string, LabelMode> = {};
-    const H = 24;
-    const GAP = 4;
-    for (const { t, v, p } of order) {
-      if (p <= 0) {
-        next[t.id] = "hidden";
+    for (const o of order) {
+      if (o.p <= 0) {
+        next[o.t.id] = "hidden";
         continue;
       }
-      const at = project(frame, { x: t.x, z: t.z });
-      const centerX = (at.left / 100) * box.w;
-      const centerY = (at.top / 100) * box.h;
-      let chosen: LabelMode = "hidden";
-      for (const variant of ["full", "compact"] as const) {
-        const w = measure(t.id, variant);
-        const height = v.badge ? H + 22 : H;
-        const r = {
-          x1: centerX - w / 2 - GAP,
-          y1: centerY - H / 2 - GAP,
-          x2: centerX + w / 2 + GAP,
-          y2: centerY - H / 2 + height + GAP,
-        };
-        const offscreen = r.x1 < -8 || r.x2 > box.w + 8;
-        if (!offscreen && !placed.some((q) => r.x1 < q.x2 && r.x2 > q.x1 && r.y1 < q.y2 && r.y2 > q.y1)) {
+      const wantFull = o.p >= 50 || (!small && !compactTiers.has(o.t.tier));
+      const tries: [LabelMode, Rect][] = wantFull
+        ? [
+            ["full", o.full],
+            ["compact", o.compact],
+          ]
+        : [["compact", o.compact]];
+      next[o.t.id] = "hidden";
+      for (const [mode, r] of tries) {
+        if (inside(r) && !hits(r, placed)) {
           placed.push(r);
-          chosen = variant;
+          next[o.t.id] = mode;
           break;
         }
       }
-      next[t.id] = chosen;
+    }
+    for (const a of areas) {
+      const s = size(`[data-area="${a.id}"]`);
+      const r = rectAt(a.at.left, a.at.top, s.w, s.h);
+      next[`area:${a.id}`] = inside(r) && !hits(r, placed) ? "full" : "hidden";
     }
     setModes(next);
-  }, [boxRef, box, tables, views, selected, hovered, frame]);
+  }, [boxRef, box, tables, views, selected, hovered, frame, areas]);
   return modes;
 }

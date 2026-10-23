@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   devIndicators: false,
+  agentRules: false,
   // Venue folders are read at runtime; ship them with every server function.
   outputFileTracingIncludes: { "/**": ["./venues/**/venue.json"] },
   async headers() {

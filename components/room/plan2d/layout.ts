@@ -141,8 +141,8 @@ export function polygonPath(points: [number, number][]): string {
 
 export interface WaterShape {
   path: string;
-  /** Faint wave lines across the water. */
-  waves: { x1: number; z1: number; x2: number; z2: number }[];
+  /** A line from the shore out across the water, for the depth gradient. */
+  shore: { x1: number; z1: number; x2: number; z2: number };
 }
 
 export function waterShape(venue: Venue): WaterShape | null {
@@ -175,19 +175,10 @@ export function waterShape(venue: Venue): WaterShape | null {
       [w.at, big],
     ],
   };
-  const b = planBounds(venue);
-  const waves: WaterShape["waves"] = [];
+  const out = w.side === "north" || w.side === "west" ? -1 : 1;
   const horizontal = w.side === "north" || w.side === "south";
-  const sign = w.side === "north" || w.side === "west" ? -1 : 1;
-  for (let i = 1; i <= 3; i++) {
-    const d = w.at + sign * i * 0.7;
-    const span = horizontal ? [b.minX, b.maxX] : [b.minZ, b.maxZ];
-    const len = span[1]! - span[0]!;
-    const start = span[0]! + len * (0.08 + 0.13 * i);
-    const end = start + len * 0.22;
-    waves.push(horizontal ? { x1: f(start), z1: f(d), x2: f(end), z2: f(d) } : { x1: f(d), z1: f(start), x2: f(d), z2: f(end) });
-  }
-  return { path: polygonPath(rect[w.side]!), waves };
+  const shore = horizontal ? { x1: 0, z1: w.at, x2: 0, z2: w.at + out * 8 } : { x1: w.at, z1: 0, x2: w.at + out * 8, z2: 0 };
+  return { path: polygonPath(rect[w.side]!), shore };
 }
 
 /** Where to print an area's name: the point inside it farthest from any table or fixture. */

@@ -11,7 +11,7 @@ describe("2D plan layout truth", () => {
       for (const t of v.tables) {
         const shape = tableShape(t);
         const p = parseTransform(shape.transform);
-        expect(p, t.id).not.toBeNull();
+        expect(p).not.toBeNull();
         expect(p!.x).toBeCloseTo(t.x, 3);
         expect(p!.z).toBeCloseTo(t.z, 3);
         expect(p!.rotation).toBeCloseTo(t.rotation, 3);
