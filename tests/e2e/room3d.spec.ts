@@ -14,7 +14,8 @@ const venue = JSON.parse(readFileSync("venues/halcyon/venue.json", "utf8")) as {
 };
 
 async function open3d(page: Page) {
-  await page.goto("/v/halcyon");
+  // This machine has no GPU, so the room is forced on (a software GPU would otherwise keep the plan).
+  await page.goto("/v/halcyon?room=3d");
   const ready = await page
     .waitForFunction(() => window.__pytScene?.ready === true, null, { timeout: 60_000 })
     .then(() => true)
@@ -91,7 +92,7 @@ test("selecting and swiping frame each table with the sheet open; Sit here drops
   const carousel = page.locator("[data-carousel]").first();
   const title = page.locator("[data-card-title]:visible").first();
   await carousel.evaluate((el) => el.scrollBy({ left: el.clientWidth, behavior: "instant" }));
-  await expect(title).not.toHaveText("Window 1");
+  await expect(title).not.toHaveText("Window 1", { timeout: 60_000 });
   const next = (await title.textContent())!.trim();
   const code = venue.tables.find((t) => t.label === next)!.id;
   await expect.poll(() => framed(page, code), { timeout: 30_000 }).toBe(true);
@@ -142,4 +143,15 @@ test("with reduced motion, Sit here is a cut", async ({ page }, info) => {
   const between = sit.samples.filter((p) => p.position.y < sit.start.position.y - 0.01 && p.position.y > 1.16);
   expect(between).toEqual([]);
   expect(sit.final.position.y).toBeCloseTo(1.15, 2);
+});
+
+test("on a software GPU the guest keeps the 2D plan: the 3D room never starts", async ({ page }, info) => {
+  test.skip(info.project.name !== "phone-3d");
+  await page.goto("/v/halcyon");
+  await expect(page.getByRole("button", { name: /^Window 1\s?,/ })).toBeVisible();
+  // Long enough for the room to have started where it would.
+  await page.waitForTimeout(8_000);
+  expect(await page.evaluate(() => window.__pytScene?.ready ?? null)).toBeNull();
+  await expect(page.locator("[data-room3d]")).toHaveCount(0);
+  await expect(page.locator("[data-plan-layer]")).not.toHaveAttribute("inert");
 });

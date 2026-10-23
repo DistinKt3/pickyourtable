@@ -47,7 +47,7 @@ test("speed and size budgets", async ({ page }, info) => {
       /* not supported */
     }
   });
-  await page.goto("/v/halcyon", { waitUntil: "commit" });
+  await page.goto("/v/halcyon?room=3d", { waitUntil: "commit" });
   await page.waitForFunction(() => performance.getEntriesByName("pyt:interactive").length > 0, null, { timeout: 30_000 });
   const interactiveWall = Date.now();
   const marks = await page.evaluate(() => {

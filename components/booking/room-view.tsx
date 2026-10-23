@@ -12,9 +12,25 @@ import { useRoom } from "@/lib/room/store";
 // The 3D room is its own chunk, fetched only after the 2D plan is interactive.
 const RoomScene3D = dynamic(() => import("@/components/room/scene3d"), { ssr: false, loading: () => null });
 
+const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software|basic render driver/i;
+
+/**
+ * WebGL 2 on a real GPU. Without one (no GPU, a blocklisted one, a virtual machine) the
+ * browser renders in software, and the 3D room would hold the page for seconds per
+ * frame, so the plan stays: the context must not report a major performance caveat,
+ * and its renderer must not be a software one. `?room=3d` forces the room anyway, for
+ * review and for the 3D browser tests on machines without a GPU.
+ */
 function webglAvailable(): boolean {
   try {
-    return Boolean(document.createElement("canvas").getContext("webgl2"));
+    const canvas = document.createElement("canvas");
+    if (new URLSearchParams(window.location.search).get("room") === "3d") return Boolean(canvas.getContext("webgl2"));
+    const gl = canvas.getContext("webgl2", { failIfMajorPerformanceCaveat: true });
+    if (!gl) return false;
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const renderer = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return !SOFTWARE_RENDERER.test(renderer);
   } catch {
     return false;
   }

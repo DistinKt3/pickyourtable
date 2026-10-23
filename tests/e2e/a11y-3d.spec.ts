@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/test";
 test("with the 3D room up: axe passes and every table is reachable exactly once", async ({ page }, info) => {
   test.setTimeout(120_000);
   const venue = JSON.parse(readFileSync("venues/halcyon/venue.json", "utf8")) as { tables: { id: string; label: string }[] };
-  await page.goto("/v/halcyon");
+  await page.goto("/v/halcyon?room=3d");
   const ready = await page
     .waitForFunction(() => (window as unknown as { __pytScene?: { ready: boolean } }).__pytScene?.ready === true, null, {
       timeout: 60_000,

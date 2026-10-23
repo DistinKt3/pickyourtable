@@ -11,7 +11,7 @@ for (const venueId of ["halcyon", "orchard-room"]) {
       tables: { id: string; label: string; x: number; z: number; rotation: number; tier: string }[];
       tiers: { id: string; bookable: boolean }[];
     };
-    await page.goto(`/v/${venueId}`);
+    await page.goto(`/v/${venueId}?room=3d`);
 
     const plan = await page.locator("[data-plan]:visible g[data-code]").evaluateAll((groups) =>
       groups.map((g) => {

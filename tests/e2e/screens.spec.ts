@@ -39,7 +39,7 @@ test("capture the device matrix", async ({ browser }, info) => {
         await page.waitForTimeout(700);
         await page.screenshot({ path: `${OUT}/${d.name}-${scheme}-${state}.png` });
       };
-      await page.goto("/v/halcyon");
+      await page.goto("/v/halcyon?room=3d");
       await expect(page.getByRole("heading", { name: "Halcyon" })).toBeVisible();
       await waitFor3d(page);
       await shot("1-room");
