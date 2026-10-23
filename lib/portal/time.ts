@@ -78,3 +78,8 @@ export function zoneLongName(timeZone: string): string {
     .find((p) => p.type === "timeZoneName")?.value;
   return name ?? timeZone;
 }
+
+/** The server's clock as an ISO instant, handed to client screens so their first paint matches. */
+export function serverNowIso(): string {
+  return new Date().toISOString();
+}

@@ -41,8 +41,8 @@ export async function sendSignInLink(email: string): Promise<void> {
 }
 
 export type LinkState =
-  | { state: "valid"; venueName: string; email: string }
-  | { state: "expired" | "used" | "invalid"; venueName: string | null };
+  | { state: "valid"; venueId: string; venueName: string; email: string }
+  | { state: "expired" | "used" | "invalid"; venueId: string | null; venueName: string | null };
 
 /**
  * Looks at a sign-in link without using it, so the page can explain an expired or
@@ -50,13 +50,14 @@ export type LinkState =
  * that prefetch the link cannot spend it.
  */
 export async function inspectSignInLink(token: string | undefined): Promise<LinkState> {
-  if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return { state: "invalid", venueName: null };
+  if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return { state: "invalid", venueId: null, venueName: null };
   const rows = await db()
     .select({
       expiresAt: magicLink.expiresAt,
       usedAt: magicLink.usedAt,
       email: operator.email,
       disabledAt: operator.disabledAt,
+      venueId: venue.id,
       venueName: venue.name,
     })
     .from(magicLink)
@@ -64,8 +65,9 @@ export async function inspectSignInLink(token: string | undefined): Promise<Link
     .innerJoin(venue, eq(venue.id, operator.venueId))
     .where(eq(magicLink.tokenHash, sha256(token)));
   const row = rows[0];
-  if (!row || row.disabledAt) return { state: "invalid", venueName: null };
-  if (row.usedAt) return { state: "used", venueName: row.venueName };
-  if (row.expiresAt.getTime() <= Date.now()) return { state: "expired", venueName: row.venueName };
-  return { state: "valid", venueName: row.venueName, email: row.email };
+  if (!row || row.disabledAt) return { state: "invalid", venueId: null, venueName: null };
+  const venueRef = { venueId: row.venueId, venueName: row.venueName };
+  if (row.usedAt) return { state: "used", ...venueRef };
+  if (row.expiresAt.getTime() <= Date.now()) return { state: "expired", ...venueRef };
+  return { state: "valid", ...venueRef, email: row.email };
 }
