@@ -1,7 +1,8 @@
 import "server-only";
 import { and, count, eq, gt, lte, ne, sql } from "drizzle-orm";
 import type { NextRequest } from "next/server";
-import { db, pgCode, PG } from "@/db/client";
+import { db } from "@/db/client";
+import { lockTable, lostRace } from "./locks";
 import { reservation } from "@/db/schema";
 import type { CreateHoldBody, CreateHoldResponse, HoldStatusResponse } from "@/lib/api/contracts";
 import { ApiError, tooMany } from "@/lib/http/api";
@@ -123,6 +124,7 @@ async function holdOrThrow(
           and(eq(reservation.deviceHash, device), eq(reservation.status, "held"), gt(reservation.holdExpiresAt, sql`now()`)),
         );
       if ((active?.n ?? 0) >= MAX_ACTIVE_HOLDS) throw new ApiError(429, "hold_limit", HOLD_LIMIT_DEVICE);
+      await lockTable(tx, table.id);
 
       await tx
         .update(reservation)
@@ -153,9 +155,7 @@ async function holdOrThrow(
       return inserted!;
     });
   } catch (e) {
-    if (pgCode(e) === PG.exclusionViolation) {
-      throw takenError(await alternativeFor(v, slot, table.code, body.party, turn));
-    }
+    if (lostRace(e)) throw takenError(await alternativeFor(v, slot, table.code, body.party, turn));
     throw e;
   }
   return { hold: holdViewOf(v, row), holdToken: await holdToken(row) };

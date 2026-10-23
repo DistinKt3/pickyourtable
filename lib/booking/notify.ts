@@ -110,7 +110,16 @@ async function send(
     return false;
   }
   try {
-    await sendEmail({ to, subject: mail.subject, html: mail.html, text: mail.text, tag, reservationId: b.r.id, attachments });
+    await sendEmail({
+      to,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+      tag,
+      reservationId: b.r.id,
+      attachments,
+      fromName: b.v.name,
+    });
     return true;
   } catch (e) {
     log.error("email.failed", { tag, reservationId: b.r.id, error: e });

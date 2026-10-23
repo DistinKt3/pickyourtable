@@ -1,6 +1,6 @@
 import "server-only";
 import { and, eq, sql } from "drizzle-orm";
-import { db, pgCode, PG } from "@/db/client";
+import { db } from "@/db/client";
 import { reservation } from "@/db/schema";
 import { log } from "@/lib/log";
 import { payments } from "@/lib/payments";
@@ -9,6 +9,7 @@ import { audit, SYSTEM } from "./audit";
 import { type LoadedBooking, loadBooking, loadBookingByIntent } from "./load";
 import { sendBookingConfirmed, sendLatePaymentRefunded, sendVenueNewBooking } from "./notify";
 import { owe, settleRefund } from "./refunds";
+import { lockTable, lostRace } from "./locks";
 
 /**
  * What happens when the provider reports on a payment. One path for the webhook, the
@@ -113,23 +114,27 @@ async function settle(
   // an expired one is kept if the table is still free, else refunded (PRD S-3).
   if (r.status === "expired" && r.cancelReason !== "released") {
     try {
-      const [row] = await db()
-        .update(reservation)
-        .set({
-          status: "confirmed",
-          confirmedAt: new Date(),
-          cancelReason: null,
-          paymentError: null,
-          updatedAt: new Date(),
-          ...cardSet,
-        })
-        .where(and(eq(reservation.id, r.id), eq(reservation.status, "expired"), eq(reservation.refundDueCents, 0)))
-        .returning();
+      const row = await db().transaction(async (tx) => {
+        await lockTable(tx, r.tableId);
+        const [updated] = await tx
+          .update(reservation)
+          .set({
+            status: "confirmed",
+            confirmedAt: new Date(),
+            cancelReason: null,
+            paymentError: null,
+            updatedAt: new Date(),
+            ...cardSet,
+          })
+          .where(and(eq(reservation.id, r.id), eq(reservation.status, "expired"), eq(reservation.refundDueCents, 0)))
+          .returning();
+        return updated;
+      });
       if (!row) return retry(b, paymentIntentId, cardIn, source, depth);
       await afterConfirm({ ...b, r: row }, "confirmed_late", source);
       return done("confirmed_late");
     } catch (e) {
-      if (pgCode(e) !== PG.exclusionViolation) throw e;
+      if (!lostRace(e)) throw e;
     }
   }
 

@@ -24,7 +24,10 @@
     "e2e:server": "bash scripts/e2e-server.sh",
     "screens": "SCREENS=1 playwright test tests/e2e/screens.spec.ts --project=desktop",
     "secrets": "gitleaks git --redact --no-banner -c .gitleaks.toml .",
-    "semgrep": "semgrep scan --config p/typescript --config p/react --config p/nextjs --config p/secrets --config p/owasp-top-ten --error --metrics off --exclude .next --exclude node_modules --exclude public/vendor ."
+    "semgrep": "semgrep scan --config p/typescript --config p/react --config p/nextjs --config p/secrets --config p/owasp-top-ten --error --metrics off --exclude .next --exclude node_modules --exclude public/vendor .",
+    "flag": "tsx --conditions=react-server scripts/flag.ts",
+    "reconcile": "tsx --conditions=react-server scripts/reconcile.ts",
+    "stripe:setup": "tsx --conditions=react-server scripts/stripe-setup.ts"
   },
   "dependencies": {
     "@date-fns/tz": "1.5.0",

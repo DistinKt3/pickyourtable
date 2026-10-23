@@ -40,6 +40,7 @@ export const PG = {
   uniqueViolation: "23505",
   checkViolation: "23514",
   serializationFailure: "40001",
+  deadlockDetected: "40P01",
 } as const;
 
 export function pgCode(e: unknown): string | undefined {

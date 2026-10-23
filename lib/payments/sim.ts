@@ -34,7 +34,8 @@ import { signWebhook } from "./webhook";
 type Delivery = "async" | "inline" | "manual";
 
 export function simDelivery(): Delivery {
-  const v = process.env.SIM_WEBHOOK_DELIVERY;
+  // Read live so tests can switch modes between cases; env() validates it at boot.
+  const v = process.env.SIM_WEBHOOK_DELIVERY ?? env().SIM_WEBHOOK_DELIVERY;
   return v === "inline" || v === "manual" ? v : "async";
 }
 

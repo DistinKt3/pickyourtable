@@ -27,6 +27,16 @@ export interface OutgoingEmail {
   tag: string;
   reservationId?: string | null;
   attachments?: EmailAttachment[];
+  /** Sender display name: the venue's name (PRD branding: guests never see ours). */
+  fromName?: string;
+}
+
+/** "Halcyon <bookings@pyt.example>", from EMAIL_FROM's address and the venue's name. */
+export function fromHeader(emailFrom: string, name?: string): string {
+  const address = /<([^>]+)>/.exec(emailFrom)?.[1] ?? emailFrom.trim();
+  if (!name) return emailFrom;
+  const safe = name.replace(/["\\\r\n<>]/g, "").trim();
+  return `"${safe}" <${address}>`;
 }
 
 let client: ServerClient | null = null;
@@ -36,7 +46,7 @@ export async function sendEmail(msg: OutgoingEmail): Promise<{ id: string; provi
   if (e.EMAIL_MODE === "postmark") {
     client ??= new ServerClient(e.POSTMARK_SERVER_TOKEN!);
     const res = await client.sendEmail({
-      From: e.EMAIL_FROM,
+      From: fromHeader(e.EMAIL_FROM, msg.fromName),
       To: msg.to,
       Subject: msg.subject,
       HtmlBody: msg.html,

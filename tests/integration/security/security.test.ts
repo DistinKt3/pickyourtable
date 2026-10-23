@@ -252,3 +252,12 @@ describe("environment and logs", () => {
     resetEnvCache();
   });
 });
+
+describe("email sender", () => {
+  it("shows the venue's name as the sender, never ours", async () => {
+    const { fromHeader } = await import("@/lib/email/index");
+    expect(fromHeader("bookings@pyt.example", "Halcyon")).toBe('"Halcyon" <bookings@pyt.example>');
+    expect(fromHeader("Ops <bookings@pyt.example>", "The Orchard Room")).toBe('"The Orchard Room" <bookings@pyt.example>');
+    expect(fromHeader("bookings@pyt.example", 'Evil"\r\nBcc: x@y.z')).toBe('"EvilBcc: x@y.z" <bookings@pyt.example>');
+  });
+});

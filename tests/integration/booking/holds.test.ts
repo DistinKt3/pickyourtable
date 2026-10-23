@@ -55,8 +55,9 @@ describe("the race for one table (G-6, PRD gate: 20 races, 20 single winners, 0 
       );
       const won = results.filter((r) => r.status === 201);
       const lost = results.filter((r) => r.status === 409);
-      expect(won, `round ${round}`).toHaveLength(1);
-      expect(lost, `round ${round}`).toHaveLength(9);
+      const seen = results.map((r) => `${r.status}${r.body.error ? `:${r.body.error.code}` : ""}`).join(", ");
+      expect(won, `round ${round}: ${seen}`).toHaveLength(1);
+      expect(lost, `round ${round}: ${seen}`).toHaveLength(9);
       for (const l of lost) {
         expect(l.body.error).toMatchObject({ code: "taken", message: "Someone just took this table." });
         // Same tier, then the most shared attributes: Window 5 is also on the water and wheelchair accessible.
@@ -345,5 +346,35 @@ describe("time zones", () => {
       const h = await heldOk({ table: "T3", date, time: "17:00", party: 2 });
       expect(h.hold.slot.startsAt).toBe(zonedInstant(date, "17:00", LA)!.toISOString());
     }
+  });
+});
+
+describe("heavy contention", () => {
+  it("150 simultaneous holds across 5 tables: one winner per table, every loser told it was taken", async () => {
+    await resetBookingData();
+    const date = day(40);
+    const tables = ["W1", "W2", "W3", "W4", "W6"];
+    const results = await Promise.all(
+      tables.flatMap((table) =>
+        Array.from({ length: 30 }, async () => ({
+          table,
+          res: await hold({ table, date, time: "20:00", ip: nextIp(), device: nextDevice() }),
+        })),
+      ),
+    );
+    for (const table of tables) {
+      const mine = results.filter((r) => r.table === table).map((r) => r.res);
+      const seen = mine.map((r) => `${r.status}${r.body.error ? `:${r.body.error.code}` : ""}`).join(", ");
+      expect(
+        mine.filter((r) => r.status === 201),
+        `${table}: ${seen}`,
+      ).toHaveLength(1);
+      expect(
+        mine.filter((r) => r.status === 409 && r.body.error?.code === "taken"),
+        `${table}: ${seen}`,
+      ).toHaveLength(29);
+    }
+    expect(await overlaps()).toBe(0);
+    await resetBookingData();
   });
 });

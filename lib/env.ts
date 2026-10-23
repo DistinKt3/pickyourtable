@@ -38,7 +38,8 @@ const schema = z
 
     EMAIL_MODE: z.enum(["dev", "postmark"]).default("dev"),
     POSTMARK_SERVER_TOKEN: z.string().min(10).optional(),
-    EMAIL_FROM: z.string().default("Pick-Your-Table Demo <bookings@pyt.example>"),
+    /** Sending address. Guests see the venue's name as the sender, never ours. */
+    EMAIL_FROM: z.string().default("bookings@pyt.example"),
 
     TURNSTILE_SITE_KEY: z.string().default(TURNSTILE_TEST_SITE_KEY),
     TURNSTILE_SECRET_KEY: z.string().default(TURNSTILE_TEST_SECRET),
@@ -51,6 +52,8 @@ const schema = z
     JOBS_INPROCESS: z.enum(["0", "1"]).default("0"),
     /** Comma-separated origins allowed to frame the guest widget (embed). */
     EMBED_ALLOWED_ORIGINS: z.string().default(""),
+    /** Simulated Stripe only: how webhook events reach the app (async POST, inline call, or manual). */
+    SIM_WEBHOOK_DELIVERY: z.enum(["async", "inline", "manual"]).default("async"),
     /** Multiplies rate-limit allowances; 1 in production. */
     RATE_LIMIT_SCALE: z.coerce.number().min(1).max(1000).default(1),
   })
