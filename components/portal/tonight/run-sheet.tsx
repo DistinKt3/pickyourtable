@@ -34,6 +34,7 @@ export function RunSheet({
   const covers = live.reduce((n, r) => n + r.partySize, 0);
   return (
     <section aria-hidden className="run-sheet hidden text-black print:block">
+      <style>{"@page { margin: 14mm 12mm; }"}</style>
       <header className="mb-4 flex items-end justify-between border-b-2 border-black pb-2">
         <div>
           <p className="font-display text-[22pt] leading-none">{venueName}</p>

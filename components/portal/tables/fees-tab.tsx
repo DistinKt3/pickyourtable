@@ -101,7 +101,7 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
               <th
                 scope="col"
                 rowSpan={2}
-                className="border-b border-line px-5 pt-4 pb-3 align-bottom text-[0.9375rem] font-medium text-ink-3"
+                className="border-b border-line px-4 pt-4 pb-3 align-bottom lg:px-5 text-[0.9375rem] font-medium text-ink-3"
               >
                 Tier
               </th>
@@ -110,10 +110,10 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
                   key={d.id}
                   scope="colgroup"
                   colSpan={2}
-                  className="border-b border-line px-3 pt-4 pb-2 text-base font-semibold text-ink"
+                  className="border-b border-line px-2 pt-4 pb-2 lg:px-3 text-base font-semibold text-ink"
                 >
                   {d.name}
-                  <span className="ml-2 text-[0.9375rem] font-normal text-ink-3 tabular">
+                  <span className="block text-[0.9375rem] font-normal text-ink-3 tabular xl:ml-2 xl:inline">
                     {formatTime(d.start)} to {formatTime(d.end)}
                   </span>
                 </th>
@@ -122,7 +122,11 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
             <tr>
               {initial.dayparts.flatMap((d) =>
                 DAY_TYPES.map((dt) => (
-                  <th key={`${d.id}-${dt}`} scope="col" className="border-b border-line px-3 pb-3 align-bottom font-normal">
+                  <th
+                    key={`${d.id}-${dt}`}
+                    scope="col"
+                    className="border-b border-line px-2 pb-3 lg:px-3 align-bottom font-normal"
+                  >
                     <span className="block text-[0.9375rem] font-medium text-ink-2">
                       {dt === "weekend" ? "Weekend" : "Weeknight"}
                     </span>
@@ -137,7 +141,7 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
           <tbody>
             {tiers.map((t) => (
               <tr key={t.id}>
-                <th scope="row" className="border-b border-line px-5 py-3 text-base font-medium text-ink">
+                <th scope="row" className="border-b border-line px-4 py-3 text-base font-medium text-ink lg:px-5">
                   <span className="flex items-center gap-2.5 whitespace-nowrap">
                     <TierDot color={t.color} />
                     {t.name}
@@ -150,10 +154,10 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
                     const runs = daysFor(d.days, weekendDays, dt).length > 0;
                     const changed = k in draft && parseDollars(draft[k]!) !== (weekly.get(k)?.feeCents ?? null);
                     return (
-                      <td key={k} className="border-b border-line px-3 py-3">
+                      <td key={k} className="border-b border-line px-2 py-3 lg:px-3">
                         {runs ? (
                           <MoneyInput
-                            className="w-28"
+                            className="w-20 lg:w-28"
                             label={`${t.name}, ${d.name}, ${dt}`}
                             value={v}
                             changed={changed}
@@ -161,7 +165,7 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
                             onChange={(next) => setDraft((x) => ({ ...x, [k]: next }))}
                           />
                         ) : (
-                          <span className="block w-28 text-center text-[0.9375rem] text-ink-3">Closed</span>
+                          <span className="block w-20 text-center lg:w-28 text-[0.9375rem] text-ink-3">Closed</span>
                         )}
                       </td>
                     );
@@ -216,6 +220,7 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
                   </div>
                   <Button
                     variant="ghost"
+                    className="ml-auto"
                     icon={<Trash aria-hidden className="size-4" />}
                     onClick={() => void removeDate(date)}
                     aria-label={`Remove special fees on ${formatDate(date, { weekday: "long" })}`}
@@ -238,7 +243,7 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
                 {invalid.length ? " · enter a dollar amount like 25 or 19.50" : " · applies to new holds only"}
               </span>
             </p>
-            <div className="flex gap-2">
+            <div className="ml-auto flex gap-2">
               <Button variant="ghost" onClick={() => setDraft({})} disabled={saving}>
                 Discard
               </Button>

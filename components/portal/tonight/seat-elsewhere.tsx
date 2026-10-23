@@ -80,7 +80,7 @@ export function SeatElsewhereDialog({
         {groups.map(([tier, list]) => (
           <fieldset key={tier} className="mb-3 last:mb-0">
             <legend className="px-1 pb-2 text-sm font-medium tracking-[0.06em] text-ink-3 uppercase">{tier}</legend>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-2">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-2">
               {list.map((t) => {
                 const state = states.get(t.id) ?? "free";
                 const unavailable = state === "seated" || state === "blocked" || state === "held";
@@ -113,7 +113,7 @@ export function SeatElsewhereDialog({
                     )}
                   >
                     <span className="flex w-full items-baseline justify-between gap-2 pr-5">
-                      <TableName label={t.label} className="text-[1.1875rem] leading-tight text-ink" />
+                      <TableName label={t.label} className="text-[1.1875rem] leading-tight whitespace-nowrap text-ink" />
                       <span className="shrink-0 text-sm text-ink-3 tabular">{t.seats} seats</span>
                     </span>
                     <span
