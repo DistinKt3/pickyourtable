@@ -23,6 +23,8 @@ export interface SharedUniforms {
   uInteriorColor: { value: THREE.Color };
   uInteriorStrength: { value: number };
   uGlow: { value: number };
+  /** Brightness of the glassware's flat body, matched to the palette's light level. */
+  uGlassBody: { value: number };
   /** How far the walls have risen above the cutaway height, in meters. */
   uRise: { value: number };
 }
@@ -38,6 +40,7 @@ export function createSharedUniforms(): SharedUniforms {
     uInteriorColor: { value: new THREE.Color(0, 0, 0) },
     uInteriorStrength: { value: 0 },
     uGlow: { value: 0 },
+    uGlassBody: { value: 0.85 },
     uRise: { value: 0 },
   };
 }
@@ -140,6 +143,7 @@ vClayWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
 uniform float uSat;
 uniform float uDim;
 uniform float uGlow;
+uniform float uGlassBody;
 uniform vec4 uInteriorRect;
 uniform vec3 uInteriorColor;
 uniform float uInteriorStrength;
@@ -177,12 +181,13 @@ totalEmissiveRadiance += diffuseColor.rgb * uInteriorColor * uInteriorStrength *
         "#include <opaque_fragment>",
         `#include <opaque_fragment>
 if (vPattern > 7.5) {
-  // Glassware inside an opaque mesh: edges that darken where the glass refracts, and
-  // one bright vertical streak, the way glass is drawn in an architectural model.
+  // Glassware inside an opaque mesh, drawn the way an illustrator draws glass: a pale,
+  // nearly unshaded body, a thin darker rim where it refracts, and one bright streak.
   float glassFacing = abs(dot(normalize(vViewPosition), normal));
-  gl_FragColor.rgb *= 1.0 - 0.5 * pow(1.0 - glassFacing, 1.5);
-  float glassStreak = smoothstep(0.38, 0.5, normal.x) * (1.0 - smoothstep(0.58, 0.7, normal.x));
-  gl_FragColor.rgb += glassStreak * 0.35;
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, diffuseColor.rgb * uGlassBody, 0.7);
+  gl_FragColor.rgb *= 1.0 - 0.6 * pow(1.0 - glassFacing, 3.0);
+  float glassStreak = smoothstep(0.4, 0.48, normal.x) * (1.0 - smoothstep(0.54, 0.62, normal.x));
+  gl_FragColor.rgb += glassStreak * 0.3 * uGlassBody;
 }`,
       );
   };

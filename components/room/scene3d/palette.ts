@@ -53,6 +53,8 @@ export interface Palette {
   plate: string;
   /** Emissive strength of the table votives (0 in daylight). */
   votiveGlow: number;
+  /** How bright the glassware's body reads (glass is drawn, not refracted). */
+  glassBody: number;
   water: { deep: string; shallow: string; sky: string };
   sky: { zenith: string; horizon: string; haze: string; far: string };
   light: {
@@ -124,6 +126,7 @@ export const LIGHT: Palette = {
   votive: "#efe6d6",
   plate: "#f1e9dc",
   votiveGlow: 0,
+  glassBody: 0.9,
   water: { deep: "#3f6f7f", shallow: "#86aab3", sky: "#e4e2d8" },
   sky: { zenith: "#7aa6c8", horizon: "#f0e7d8", haze: "#ece6da", far: "#a3abac" },
   light: {
@@ -159,7 +162,7 @@ export const DUSK: Palette = {
     garden: "#252a22",
   },
   interiorGlow: "#ffcf9e",
-  interiorGlowStrength: 0.022,
+  interiorGlowStrength: 0.045,
   ground: { stone: "#201f1d", lawn: "#1d211b" },
   quay: "#1a1918",
   wall: "#58534d",
@@ -191,14 +194,16 @@ export const DUSK: Palette = {
   votive: "#f2c48c",
   plate: "#a39a8e",
   votiveGlow: 2.2,
+  glassBody: 0.24,
   water: { deep: "#0c1318", shallow: "#18232a", sky: "#2a2f3a" },
   sky: { zenith: "#10172a", horizon: "#4b3f40", haze: "#2c2a2b", far: "#22232a" },
   light: {
     hemiSky: "#56617d",
-    hemiGround: "#54463a",
-    hemi: 0.95,
+    // Warm bounce from the lit floor: it reaches the walls' shaded faces, not the floor.
+    hemiGround: "#6e5846",
+    hemi: 1.35,
     key: "#ffe8d0",
-    keyIntensity: 1.8,
+    keyIntensity: 1.6,
     keyElevation: 64,
     env: 0.14,
     poolColor: "#ffd2a0",

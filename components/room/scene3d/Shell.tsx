@@ -82,6 +82,7 @@ function applyPalette(
   shared.uInteriorColor.value.set(palette.interiorGlow);
   shared.uInteriorStrength.value = palette.interiorGlowStrength;
   shared.uGlow.value = palette.votiveGlow;
+  shared.uGlassBody.value = palette.glassBody;
   fade.uFadeRect.value.set(...geo.siteRect);
   fade.uFade.value.set(0.6, 8.5);
   fade.uHaze.value.set(80, 1400);
