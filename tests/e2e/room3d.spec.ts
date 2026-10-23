@@ -45,35 +45,46 @@ async function chooseTable(page: Page, label: string) {
   await expect(page.getByRole("heading", { name: label, exact: true }).first()).toBeVisible();
 }
 
-/** Clicks, then samples the camera every frame until it settles; returns when it arrived and where. */
-async function timedMove(page: Page, click: () => Promise<void>, done: (p: Pose) => boolean) {
+/**
+ * Clicks, then samples the camera every 10 ms until it is at eye height `y`. Samples
+ * land between frames, so each one shows the pose last drawn. Returns when it arrived,
+ * the longest gap between drawn poses, where it started and every pose on the way.
+ */
+async function timedMove(page: Page, click: () => Promise<void>, y: number) {
   await page.evaluate(() => {
-    const w = window as unknown as { __samples: { t: number; p: Pose }[]; __sampling: boolean };
+    const w = window as unknown as { __samples: { t: number; p: Pose }[]; __timer: number };
     w.__samples = [];
-    w.__sampling = true;
-    const tick = () => {
-      if (!w.__sampling) return;
-      w.__samples.push({ t: performance.now(), p: window.__pytScene!.camera() });
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+    w.__timer = window.setInterval(() => w.__samples.push({ t: performance.now(), p: window.__pytScene!.camera() }), 10);
   });
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __samples: unknown[] }).__samples.length))
+    .toBeGreaterThan(0);
   const clickedAt = await page.evaluate(() => performance.now());
   await click();
-  await expect.poll(async () => done(await pose(page)), { timeout: 10_000 }).toBe(true);
+  await page.waitForFunction(
+    (eye) => (window as unknown as { __samples: { p: Pose }[] }).__samples.some((x) => Math.abs(x.p.position.y - eye) < 0.01),
+    y,
+    { timeout: 60_000 },
+  );
   const samples = await page.evaluate(() => {
-    const w = window as unknown as { __samples: { t: number; p: Pose }[]; __sampling: boolean };
-    w.__sampling = false;
+    const w = window as unknown as { __samples: { t: number; p: Pose }[]; __timer: number };
+    window.clearInterval(w.__timer);
     return w.__samples;
   });
-  const after = samples.filter((s) => s.t >= clickedAt);
-  const first = after.find((s) => done(s.p));
-  const gaps = samples.slice(1).map((s, i) => s.t - samples[i]!.t);
+  const before = samples.filter((x) => x.t < clickedAt);
+  const after = samples.filter((x) => x.t >= clickedAt);
+  const arrived = after.find((x) => Math.abs(x.p.position.y - y) < 0.01)!;
+  // Times at which a new pose was drawn, from the tap to the arrival.
+  const drawn = [clickedAt];
+  for (let i = 1; i < after.length && after[i - 1]!.t < arrived.t; i++) {
+    if (after[i]!.p.position.y !== after[i - 1]!.p.position.y) drawn.push(after[i]!.t);
+  }
+  const gaps = drawn.slice(1).map((t, i) => t - drawn[i]!);
   return {
-    arrivedMs: first ? first.t - clickedAt : Number.NaN,
+    arrivedMs: arrived.t - clickedAt,
     frameMs: Math.max(16, ...gaps),
-    start: after[0]?.p ?? samples[0]!.p,
-    samples: after.map((s) => s.p),
+    start: (before.at(-1) ?? after[0]!).p,
+    samples: after.map((x) => x.p),
     final: await pose(page),
   };
 }
@@ -99,11 +110,7 @@ test("selecting and swiping frame each table with the sheet open; Sit here drops
   await expect(page.locator("section[aria-label$='table details']")).not.toHaveAttribute("aria-hidden", "true");
 
   // Sit here: the eye at 1.15 m above the floor, reached in 400 to 600 ms.
-  const sit = await timedMove(
-    page,
-    () => page.getByRole("button", { name: "Sit here" }).first().click(),
-    (p) => Math.abs(p.position.y - 1.15) < 0.01,
-  );
+  const sit = await timedMove(page, () => page.getByRole("button", { name: "Sit here" }).first().click(), 1.15);
   info.annotations.push({
     type: "Sit here",
     description: `${Math.round(sit.arrivedMs)} ms (frames up to ${Math.round(sit.frameMs)} ms apart)`,
@@ -133,13 +140,11 @@ test("with reduced motion, Sit here is a cut", async ({ page }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await open3d(page);
   await chooseTable(page, "Window 2");
-  const sit = await timedMove(
-    page,
-    () => page.getByRole("button", { name: "Sit here" }).first().click(),
-    (p) => Math.abs(p.position.y - 1.15) < 0.01,
-  );
+  const sit = await timedMove(page, () => page.getByRole("button", { name: "Sit here" }).first().click(), 1.15);
   info.annotations.push({ type: "Sit here (reduced motion)", description: `${Math.round(sit.arrivedMs)} ms` });
-  // A cut, whatever the frame rate: no frame shows the camera between where it was and the seat.
+  // A cut, whatever the frame rate: the camera was well above the seat, and no drawn
+  // frame shows it anywhere between there and the seat.
+  expect(sit.start.position.y).toBeGreaterThan(3);
   const between = sit.samples.filter((p) => p.position.y < sit.start.position.y - 0.01 && p.position.y > 1.16);
   expect(between).toEqual([]);
   expect(sit.final.position.y).toBeCloseTo(1.15, 2);

@@ -110,6 +110,9 @@ export class CameraDirector {
       pose.target.z,
       false,
     );
+    // Write the position to the camera now, with the lens below: otherwise the controls
+    // apply it on their next update and one frame shows the new lens from the old place.
+    controls.update(0);
     camera.fov = pose.fov;
     camera.near = NEAR_ORBIT + (NEAR_SEAT - NEAR_ORBIT) * Math.min(1, sit * 1.4);
     camera.far = FAR_ORBIT + (FAR_SEAT - FAR_ORBIT) * sit;
