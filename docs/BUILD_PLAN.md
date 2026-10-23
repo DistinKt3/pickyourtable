@@ -16,8 +16,11 @@ Supply chain: exact pins, a committed lockfile, a 3-day minimum release age, and
 | `pnpm dev` | Dev server on :3000 |
 | `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | Fast checks |
 | `pnpm test` | Vitest: unit and integration (recreates the `pyt_test` database each run) |
-| `pnpm test:e2e` | Playwright against a production build on :3100 with its own database |
-| `pnpm audit` | Must report no vulnerabilities |
+| `pnpm test:e2e` | Playwright against a production build on :3100 with its own database (`pyt_e2e`), phone (390 x 844) and desktop (1440 x 900). One run at a time: the port is fixed. `E2E_SKIP_BUILD=1` reuses the last build |
+| `pnpm screens` / `pnpm screens:portal` | The screenshot loop for the guest widget, and for every portal screen at iPad and desktop sizes, light and dark |
+| `pnpm audit` / `pnpm secrets` / `pnpm semgrep` | Dependency audit, gitleaks over the git history, Semgrep's TypeScript, React, Next.js, secrets and OWASP rule sets. All must report nothing |
+| `pnpm flag pyt_widget_enabled off` | The kill switch (PRD S-5); `on` restores |
+| `pnpm reconcile` | Compares every booking's money with the payment provider |
 
 ## Architecture
 
@@ -40,12 +43,13 @@ app/portal/                   operator portal
 app/api/                      route handlers
 components/ui/                design system
 components/room/plan2d/       2D SVG plan (paints first; also the no-WebGL view)
-components/room/list/         list view
 components/room/scene3d/      3D diorama (loaded after the 2D plan)
-components/booking/           guest flow UI
+components/booking/           guest flow UI, including the list view (list-view.tsx) and the table card
 components/portal/            portal UI
+app/demo/[venue]/route.ts     a plain-HTML stand-in for a venue's own website, using the one-line embed
 tests/unit, tests/integration Vitest
-tests/e2e                     Playwright: demo script, races, a11y, screenshots
+tests/e2e                     Playwright: demo script, guest states, a11y and type size, budgets, layout truth,
+                              kill switch, portal, timed PRD checks (requirements.spec.ts), screenshots
 ```
 
 Server truth: prices, availability and holds are computed only on the server. The client never sends a price; if it did, it would be ignored.
