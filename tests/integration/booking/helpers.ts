@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { NextRequest } from "next/server";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import { GET as holdGet } from "@/app/api/holds/[id]/route";
 import { POST as checkoutPost } from "@/app/api/holds/[id]/checkout/route";
 import { POST as simConfirm } from "@/app/api/sim/payment-intents/[id]/confirm/route";
@@ -196,6 +196,20 @@ export async function book(a: HoldArgs & { email?: string }): Promise<Booked> {
 export async function row(id: string) {
   const [r] = await db().select().from(reservation).where(eq(reservation.id, id));
   return r!;
+}
+
+/**
+ * Runs `fn` with the clock at a booking's start time plus `minutes`: a host marking
+ * arrival on the night. Only Date is faked, so timers and the database run normally.
+ */
+export async function onTheNight<T>(reservationId: string, fn: () => Promise<T>, minutes = 5): Promise<T> {
+  const r = await row(reservationId);
+  vi.useFakeTimers({ toFake: ["Date"], now: r.startsAt.getTime() + minutes * 60_000 });
+  try {
+    return await fn();
+  } finally {
+    vi.useRealTimers();
+  }
 }
 
 export async function expireHold(id: string) {

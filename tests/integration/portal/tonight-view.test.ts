@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PortalReservation, TonightResponse } from "@/lib/api/contracts";
-import { arrival, arrivalText, orderRows, planViews, summarize } from "@/lib/portal/tonight-view";
+import { arrival, arrivalText, canMarkNoShow, orderRows, planViews, summarize } from "@/lib/portal/tonight-view";
 import type { RoomTable } from "@/lib/room/types";
 
 const base: PortalReservation = {
@@ -44,6 +44,16 @@ describe("Tonight read model", () => {
     expect(arrival({ ...base, status: "seated" }, at("2026-10-31T02:45:00.000Z")).kind).toBe("seated");
     expect(arrivalText({ kind: "late", minutes: 75 })).toBe("1 h 15 min late");
     expect(arrivalText({ kind: "due", minutes: 0 })).toBe("Due now");
+  });
+
+  it("looks ahead without arrival actions, and offers No-show only once the guest is late", () => {
+    expect(arrival(base, at("2026-10-30T07:00:00.000Z"), true)).toEqual({ kind: "ahead" });
+    expect(arrivalText({ kind: "ahead" })).toBe("Booked");
+    expect(arrival({ ...base, status: "cancelled" }, at("2026-10-30T07:00:00.000Z"), true).kind).toBe("cancelled");
+    expect(canMarkNoShow(arrival(base, at("2026-10-31T02:20:00.000Z")))).toBe(false);
+    expect(canMarkNoShow(arrival(base, at("2026-10-31T02:45:00.000Z")))).toBe(true);
+    expect(canMarkNoShow(arrival(base, at("2026-10-31T04:05:00.000Z")))).toBe(true);
+    expect(canMarkNoShow({ kind: "ahead" })).toBe(false);
   });
 
   it("counts tonight and keeps refunds out of the fees", () => {

@@ -141,6 +141,8 @@ export function TonightScreen({
   const day = useMemo(() => localDayRange(date, venue.timezone), [date, venue.timezone]);
   const now = effectiveNow(date, today, clockNow, day.end, day.start);
   const readOnly = date < today;
+  // A later date is for looking ahead: arrival is marked on the night (the server agrees).
+  const ahead = date > today;
 
   const rows = useMemo(() => {
     const list = (data?.date === date ? data.reservations : []).map((r) => {
@@ -320,12 +322,12 @@ export function TonightScreen({
                   <BookingRow
                     key={r.id}
                     r={r}
-                    arrival={arrival(r, now)}
+                    arrival={arrival(r, now, ahead)}
                     seatedLabel={r.seatedTable && r.seatedTable !== r.table ? (labels[r.seatedTable] ?? r.seatedTable) : null}
                     selected={selected !== null && (r.table === selected || r.seatedTable === selected)}
                     pending={Boolean(pending[r.id])}
                     error={rowErrors[r.id] ?? null}
-                    readOnly={readOnly}
+                    readOnly={readOnly || ahead}
                     onSeat={() => void act(r, "seat")}
                     onSeatElsewhere={() => setElsewhere(r)}
                     onNoShow={() => void act(r, "no-show")}

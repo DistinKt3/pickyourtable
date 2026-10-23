@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
 import type { PortalReservation } from "@/lib/api/contracts";
 import { cx, formatMoney, formatTime, occasionLabel, partyLabel } from "@/lib/format";
-import { type Arrival, arrivalText } from "@/lib/portal/tonight-view";
+import { type Arrival, arrivalText, canMarkNoShow } from "@/lib/portal/tonight-view";
 import { TableName } from "../ui";
 
 /**
@@ -152,9 +152,11 @@ export function BookingRow({
           </span>
           {readOnly ? null : (
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="ghost" disabled={pending} onClick={onNoShow} aria-label={`Mark ${r.guestName} as a no-show`}>
-                No-show
-              </Button>
+              {canMarkNoShow(arrival) ? (
+                <Button variant="ghost" disabled={pending} onClick={onNoShow} aria-label={`Mark ${r.guestName} as a no-show`}>
+                  No-show
+                </Button>
+              ) : null}
               <Button
                 variant="secondary"
                 disabled={pending}

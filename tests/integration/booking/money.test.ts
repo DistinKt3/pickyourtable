@@ -9,7 +9,7 @@ import { emailMessage, guest, reservation } from "@/db/schema";
 import { reconcile, retention, tick } from "@/lib/booking/jobs";
 import { cancelByVenue, markNoShow, seatReservation } from "@/lib/booking/operations";
 import { resetEnvCache } from "@/lib/env";
-import { type Booked, book, call, checkout, day, expireHold, heldOk, pay, resetBookingData, row } from "./helpers";
+import { type Booked, book, call, checkout, day, expireHold, heldOk, onTheNight, pay, resetBookingData, row } from "./helpers";
 
 const owner = { type: "operator" as const, id: "00000000-0000-7000-8000-00000000b001" };
 
@@ -57,10 +57,22 @@ describe("money reconciles to the cent (PRD gate)", () => {
     // Venue cancellations, seated elsewhere, a seated guest and no-shows.
     await cancelByVenue({ venueId: "halcyon", reservationId: booked[5]!.holdId, reason: "Private event", actor: owner });
     await cancelByVenue({ venueId: "halcyon", reservationId: booked[6]!.holdId, reason: "Private event", actor: owner });
-    await seatReservation({ venueId: "halcyon", reservationId: booked[7]!.holdId, tableCode: "S3", actor: owner });
-    await seatReservation({ venueId: "halcyon", reservationId: booked[8]!.holdId, actor: owner });
-    await markNoShow({ venueId: "halcyon", reservationId: booked[9]!.holdId, actor: owner });
-    await markNoShow({ venueId: "halcyon", reservationId: booked[10]!.holdId, actor: owner });
+    await onTheNight(booked[7]!.holdId, () =>
+      seatReservation({ venueId: "halcyon", reservationId: booked[7]!.holdId, tableCode: "S3", actor: owner }),
+    );
+    await onTheNight(booked[8]!.holdId, () =>
+      seatReservation({ venueId: "halcyon", reservationId: booked[8]!.holdId, actor: owner }),
+    );
+    await onTheNight(
+      booked[9]!.holdId,
+      () => markNoShow({ venueId: "halcyon", reservationId: booked[9]!.holdId, actor: owner }),
+      20,
+    );
+    await onTheNight(
+      booked[10]!.holdId,
+      () => markNoShow({ venueId: "halcyon", reservationId: booked[10]!.holdId, actor: owner }),
+      20,
+    );
 
     // Expired holds: one never paid, one with an open payment the job cancels, one paid late and refunded.
     const date = day(25);

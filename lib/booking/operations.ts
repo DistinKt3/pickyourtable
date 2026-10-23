@@ -11,7 +11,7 @@ import { type LoadedBooking, loadBooking } from "./load";
 import { sendBookingCancelled, sendBookingConfirmed, sendSeatedElsewhere } from "./notify";
 import { settleRefund } from "./refunds";
 import { daySlots } from "./slots";
-import { startOfLocalDay } from "./time";
+import { localDateTime, startOfLocalDay } from "./time";
 import { type GuestRow, portalReservationOf, type ReservationRow } from "./views";
 
 /**
@@ -64,6 +64,21 @@ function stateError(status: ReservationStatus): OperationError {
     cancelled: "This booking was cancelled.",
   };
   return new OperationError(409, "invalid_state", messages[status] ?? NOT_FOUND);
+}
+
+/**
+ * Arrival is marked on the night. Seating is allowed from the start of the booking's
+ * day at the venue (guests arrive early); a no-show only once the booking time has
+ * passed, because it keeps the fee.
+ */
+function assertArrivalTime(b: LoadedBooking, action: "seat" | "no_show"): void {
+  const now = new Date();
+  if (action === "seat" && localDateTime(b.r.startsAt, b.v.timezone).date > todayIn(b.v.timezone)) {
+    throw new OperationError(409, "too_early", "This booking is for a later date. Seat guests on the day.");
+  }
+  if (action === "no_show" && now < b.r.startsAt) {
+    throw new OperationError(409, "too_early", "You can mark a no-show once the booking time has passed.");
+  }
 }
 
 async function result(venueId: string, reservationId: string, refundCents: number, v?: BookingVenue): Promise<ReservationResult> {
@@ -244,6 +259,7 @@ export async function seatReservation(args: {
 }): Promise<ReservationResult> {
   const b = await bookingOf(args.venueId, args.reservationId);
   if (b.r.status !== "confirmed") throw stateError(b.r.status);
+  assertArrivalTime(b, "seat");
   const target = args.tableCode ? b.v.byCode.get(args.tableCode) : b.table;
   if (!target) throw new OperationError(404, "table_not_found", "We could not find that table.");
   const elsewhere = target.id !== b.table.id;
@@ -283,6 +299,7 @@ export async function seatReservation(args: {
 export async function markNoShow(args: { venueId: string; reservationId: string; actor: Actor }): Promise<ReservationResult> {
   const b = await bookingOf(args.venueId, args.reservationId);
   if (b.r.status !== "confirmed") throw stateError(b.r.status);
+  assertArrivalTime(b, "no_show");
   await transition(b, ["confirmed"], { status: "no_show" }, { actor: args.actor, action: "booking.no_show", amountCents: 0 });
   opLog("booking.no_show", b, args.actor, { refundCents: 0, outcome: "no_show" });
   return result(args.venueId, b.r.id, 0, b.v);

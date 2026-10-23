@@ -12,7 +12,7 @@ import {
   seatReservation,
   undoArrival,
 } from "@/lib/booking/operations";
-import { book, emailsFor, heldOk, nextWeekday, refundedAtProvider, resetBookingData, row } from "./helpers";
+import { book, emailsFor, heldOk, nextWeekday, onTheNight, refundedAtProvider, resetBookingData, row } from "./helpers";
 
 const host = { type: "operator" as const, id: "00000000-0000-7000-8000-00000000a001" };
 const owner = { type: "operator" as const, id: "00000000-0000-7000-8000-00000000a002" };
@@ -40,7 +40,9 @@ async function audits(reservationId: string) {
 describe("operator operations (O-1, O-2)", () => {
   it("seating at a different table refunds the full fee automatically and emails the guest", async () => {
     const b = await book({ table: "W1", date: nextWeekday(3, 5), time: "19:00", email: "seated@example.com" });
-    const res = await seatReservation({ venueId: "halcyon", reservationId: b.holdId, tableCode: "S2", actor: host });
+    const res = await onTheNight(b.holdId, () =>
+      seatReservation({ venueId: "halcyon", reservationId: b.holdId, tableCode: "S2", actor: host }),
+    );
     expect(res.refundCents).toBe(b.priceCents);
     expect(res.reservation).toMatchObject({
       status: "seated",
@@ -66,7 +68,7 @@ describe("operator operations (O-1, O-2)", () => {
 
   it("seating at the paid table refunds nothing, and can be undone", async () => {
     const b = await book({ table: "W2", date: nextWeekday(3, 5), time: "19:00" });
-    const res = await seatReservation({ venueId: "halcyon", reservationId: b.holdId, actor: host });
+    const res = await onTheNight(b.holdId, () => seatReservation({ venueId: "halcyon", reservationId: b.holdId, actor: host }));
     expect(res).toMatchObject({ refundCents: 0, reservation: { status: "seated", seatedTable: null, paid: true } });
     expect(await refundedAtProvider(b.paymentIntentId)).toBe(0);
     await rejects(seatReservation({ venueId: "halcyon", reservationId: b.holdId, actor: host }), 409, "invalid_state");
@@ -76,7 +78,7 @@ describe("operator operations (O-1, O-2)", () => {
 
   it("a no-show refunds nothing", async () => {
     const b = await book({ table: "W3", date: nextWeekday(3, 5), time: "19:00" });
-    const res = await markNoShow({ venueId: "halcyon", reservationId: b.holdId, actor: host });
+    const res = await onTheNight(b.holdId, () => markNoShow({ venueId: "halcyon", reservationId: b.holdId, actor: host }), 20);
     expect(res).toMatchObject({ refundCents: 0, reservation: { status: "no_show", paid: true } });
     expect(await refundedAtProvider(b.paymentIntentId)).toBe(0);
     expect((await audits(b.holdId)).find((a) => a.action === "booking.no_show")).toBeTruthy();
@@ -125,6 +127,26 @@ describe("operator operations (O-1, O-2)", () => {
     expect(other.bookings.some((x) => x.id === b.holdId)).toBe(false);
   });
 
+  it("arrival is marked on the night: seating on the booking's day, a no-show only after its time", async () => {
+    const b = await book({ table: "C2", date: nextWeekday(1, 5), time: "19:00" });
+    // Days ahead: neither.
+    await rejects(seatReservation({ venueId: "halcyon", reservationId: b.holdId, actor: host }), 409, "too_early");
+    await rejects(markNoShow({ venueId: "halcyon", reservationId: b.holdId, actor: host }), 409, "too_early");
+    // That afternoon: an early guest can be seated, but nobody is a no-show yet.
+    await rejects(
+      onTheNight(b.holdId, () => markNoShow({ venueId: "halcyon", reservationId: b.holdId, actor: host }), -60),
+      409,
+      "too_early",
+    );
+    const early = await onTheNight(
+      b.holdId,
+      () => seatReservation({ venueId: "halcyon", reservationId: b.holdId, actor: host }),
+      -60,
+    );
+    expect(early.reservation.status).toBe("seated");
+    expect((await row(b.holdId)).status).toBe("seated");
+  });
+
   it("resends the confirmation", async () => {
     const b = await book({ table: "C1", date: nextWeekday(3, 5), time: "19:00" });
     await resendConfirmation({ venueId: "halcyon", reservationId: b.holdId, actor: host });
@@ -154,7 +176,7 @@ describe("Tonight and Bookings", () => {
     expect(state.get("B2")).toBe("free");
     expect(state.get("B3")).toBe("held");
     expect(state.get("S1")).toBe("free");
-    await seatReservation({ venueId: "halcyon", reservationId: paid.holdId, actor: host });
+    await onTheNight(paid.holdId, () => seatReservation({ venueId: "halcyon", reservationId: paid.holdId, actor: host }));
     const after = await listTonight({ venueId: "halcyon", date });
     expect(after.tables.find((t) => t.code === "B1")?.state).toBe("seated");
     expect(after.reservations[0]!.status).toBe("seated");

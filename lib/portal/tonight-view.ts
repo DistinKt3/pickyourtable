@@ -16,7 +16,9 @@ export type Arrival =
   | { kind: "seated"; at: string | null }
   | { kind: "no_show" }
   | { kind: "cancelled" }
-  | { kind: "ended" };
+  | { kind: "ended" }
+  /** A later date: nothing to mark yet. */
+  | { kind: "ahead" };
 
 /** Minutes before the booking time when a guest counts as due. */
 export const DUE_WINDOW_MINUTES = 15;
@@ -40,10 +42,11 @@ export function effectiveNow(date: string, today: string, now: Date, dayEnd: Dat
   return date > today ? dayStart : dayEnd;
 }
 
-export function arrival(r: PortalReservation, now: Date): Arrival {
+export function arrival(r: PortalReservation, now: Date, ahead = false): Arrival {
   if (r.status === "seated") return { kind: "seated", at: null };
   if (r.status === "no_show") return { kind: "no_show" };
   if (r.status === "cancelled" || r.status === "expired") return { kind: "cancelled" };
+  if (ahead) return { kind: "ahead" };
   const start = new Date(r.slot.startsAt).getTime();
   const end = new Date(r.slot.endsAt).getTime();
   const minutes = Math.round((start - now.getTime()) / 60_000);
@@ -73,7 +76,14 @@ export function arrivalText(a: Arrival): string {
       return "Cancelled";
     case "ended":
       return "Not marked";
+    case "ahead":
+      return "Booked";
   }
+}
+
+/** A no-show keeps the fee, so the server allows it only once the booking time has passed. */
+export function canMarkNoShow(a: Arrival): boolean {
+  return a.kind === "late" || a.kind === "ended";
 }
 
 export interface TonightSummary {
