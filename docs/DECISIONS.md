@@ -60,3 +60,15 @@ Implementation choices the PRD leaves open, each with a one-line reason. Product
 | The sign-in link page uses a same-origin referrer policy | `no-referrer` made browsers send `Origin: null`, which the same-origin check rightly refuses. |
 | Blackouts are entered in venue-local time and stored as UTC with `@date-fns/tz` | Correct across the clock changes; tested over the November change. |
 | The widget flag cache is one per process (`globalThis`), 15 s | Next bundles pages and route handlers separately; per-module caches let the page and the APIs disagree. |
+
+## The 3D room
+
+| Decision | Reason |
+| --- | --- |
+| The 3D room is a separate chunk, fetched when the browser is idle after the 2D plan is interactive, and only where WebGL 2 works | Keeps the 2D budget (interactive in 2.5 s) independent of the 3D download; without WebGL the plan is the whole room. |
+| The plan and the 3D room cross-fade once the scene has compiled its shaders, measured its labels and drawn 3 frames | No pop-in and no half-lit first frame. |
+| Once 3D is up, the plan is `inert` and the 3D labels are the tables' buttons; before that, the 3D layer is `inert` | Each table is reachable exactly once by keyboard and screen reader, whichever renderer shows. |
+| If the scene throws, an error boundary drops it and the plan stays | A GPU or driver fault never costs a guest the booking. |
+| Sit here in 3D moves the camera to the seat and steps the card aside behind "Back to the room"; without 3D it shows the seat view full screen | The same promise in both renderers: you see what you will see from that seat. |
+| The KTX2 transcoder is vendored under `public/vendor/basis`, unmodified from three 0.186.1 (Apache-2.0, license beside it) | Venue models with compressed textures load from our own origin under the CSP. |
+| Frame loop on demand, device pixel ratio capped at 2, shadows rendered once | Battery and frame rate on mid-range phones; the room only changes when the camera or a table does. |

@@ -30,6 +30,11 @@ export interface LabelContent {
   price: string | null;
   muted: boolean;
   accessibleName: string;
+  /**
+   * What the button says after its visible title, for screen readers only (tier, seats,
+   * state), so the accessible name starts with the visible text (WCAG 2.5.3).
+   */
+  context: string;
 }
 
 const STATE_WORDS: Record<VisualState, string> = {
@@ -58,6 +63,7 @@ export function labelContent(
     price,
     muted: state === "taken" || state === "wrong_size",
     accessibleName: parts.join(", "),
+    context: `, ${[tier.name, seatsWord, STATE_WORDS[state]].join(", ")}${price ? ", " : ""}`,
   };
 }
 

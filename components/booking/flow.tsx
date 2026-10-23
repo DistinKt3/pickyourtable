@@ -21,10 +21,20 @@ const StripePay = dynamic(() => import("./stripe-pay").then((m) => m.StripePay),
 });
 
 /** Hold, details and payment (PRD guest step 6), confirmation (step 7). */
-export function Flow({ data, onClose, onRehold }: { data: RoomData; onClose: () => void; onRehold: () => void }) {
+export function Flow({
+  data,
+  onClose,
+  onRehold,
+  embedded = false,
+}: {
+  data: RoomData;
+  onClose: () => void;
+  onRehold: () => void;
+  embedded?: boolean;
+}) {
   const step = useBooking((s) => s.step);
   if (step === "details") return <DetailsStep data={data} onClose={onClose} />;
-  if (step === "pay") return <PayStep data={data} />;
+  if (step === "pay") return <PayStep data={data} embedded={embedded} />;
   if (step === "confirmed") return <ConfirmedStep data={data} onClose={onClose} />;
   if (step === "expired") return <ExpiredStep data={data} onClose={onClose} onRehold={onRehold} />;
   return null;
@@ -262,7 +272,7 @@ async function waitForConfirmation(holdId: string, token: string): Promise<"conf
   return "timeout";
 }
 
-function PayStep({ data }: { data: RoomData }) {
+function PayStep({ data, embedded }: { data: RoomData; embedded: boolean }) {
   const { hold } = useHoldTable(data);
   const token = useBooking((s) => s.holdToken);
   const payment = useBooking((s) => s.payment);
@@ -310,6 +320,22 @@ function PayStep({ data }: { data: RoomData }) {
             <SimPay payment={payment} confirming={confirming} onPaid={onPaid} onError={(m) => setPaymentError(m)} />
           )}
         </div>
+        {embedded ? (
+          // Some browsers hide Apple Pay and Google Pay inside another site's frame. The
+          // hold moves to a tab on our own site: the token rides in the fragment, which
+          // is never sent to a server or in a Referer header.
+          <p className="mt-4 text-base text-ink-2">
+            Apple Pay or Google Pay not showing?{" "}
+            <a
+              href={`/v/${data.venue.id}#${new URLSearchParams({ resume: hold.id, t: token }).toString()}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-accent underline underline-offset-4"
+            >
+              Continue in a new tab
+            </a>
+          </p>
+        ) : null}
         <p className="mt-5 text-base leading-relaxed text-ink-3">{POLICY(data.venue.booking.fullRefundHours)}</p>
       </div>
     </div>

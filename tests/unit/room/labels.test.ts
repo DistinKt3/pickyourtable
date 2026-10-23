@@ -44,6 +44,8 @@ describe("label content", () => {
     expect(c.title).toBe("Window 1");
     expect(c.price).toBe("$40");
     expect(c.accessibleName).toBe("Window 1, Window, 2 seats, available, $40");
+    // The button's name is its visible title, then this context, then the visible price.
+    expect(c.title + c.context + c.price).toBe(c.accessibleName);
     expect(c.muted).toBe(false);
   });
 

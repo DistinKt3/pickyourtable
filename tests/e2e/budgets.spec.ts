@@ -35,6 +35,18 @@ test("speed and size budgets", async ({ page }, info) => {
       scripts.push({ url: urls.get(e.requestId) ?? "", bytes: e.encodedDataLength, at: Date.now() });
   });
 
+  // Long main-thread tasks, to see what the 3D load costs the page (reported only).
+  await page.addInitScript(() => {
+    const w = window as unknown as { __longTasks: number[] };
+    w.__longTasks = [];
+    try {
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) w.__longTasks.push(e.duration);
+      }).observe({ type: "longtask", buffered: true });
+    } catch {
+      /* not supported */
+    }
+  });
   await page.goto("/v/halcyon", { waitUntil: "commit" });
   await page.waitForFunction(() => performance.getEntriesByName("pyt:interactive").length > 0, null, { timeout: 30_000 });
   const interactiveWall = Date.now();
@@ -61,6 +73,14 @@ test("speed and size budgets", async ({ page }, info) => {
     },
     { type: "3D ready", description: threeD ? `${Math.round(threeD)} ms (software GPU)` : "not reached on this machine" },
   );
+  const longTasks = await page.evaluate(() => (window as unknown as { __longTasks: number[] }).__longTasks);
+  info.annotations.push({
+    type: "longest main-thread task",
+    description: longTasks.length
+      ? `${Math.round(Math.max(...longTasks))} ms of ${longTasks.length} long tasks (software GPU, CPU slowed 4x)`
+      : "none",
+  });
+
   console.log(JSON.stringify({ budgets: info.annotations }));
 
   expect(marks.interactive).toBeLessThan(2500);

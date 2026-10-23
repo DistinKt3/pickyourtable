@@ -79,9 +79,19 @@ export function GuestWidget({ data, today, turnstileSiteKey, turnstileMode, embe
   const largestParty = useMemo(() => Math.max(1, ...data.tables.filter((t) => t.bookable).map((t) => t.maxParty)), [data.tables]);
   const table = data.tables.find((t) => t.id === selected) ?? null;
   const inFlow = step !== "room";
+  // Sitting in 3D: the camera is at the seat, so the card steps aside until "Back to the room".
+  const seated3d = useRoom((s) => s.renderer === "3d" && s.sitting !== null);
 
-  // Bring back a hold after a reload or a dropped connection.
+  // Bring back a hold after a reload or a dropped connection, or one handed over from
+  // the embed ("Continue in a new tab"): take it from the fragment, then clear it.
   useEffect(() => {
+    const handed = new URLSearchParams(window.location.hash.slice(1));
+    const resume = handed.get("resume");
+    const t = handed.get("t");
+    if (resume && t) {
+      saveHold({ venueId: venue.id, holdId: resume, token: t });
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
     const saved = loadSavedHold(venue.id);
     if (!saved) return;
     const restore = async () => {
@@ -229,7 +239,7 @@ export function GuestWidget({ data, today, turnstileSiteKey, turnstileMode, embe
           <aside className="flex w-[440px] shrink-0 flex-col border-l border-line bg-surface-1" aria-label="Table details">
             {inFlow ? (
               <div className="flex min-h-0 flex-1 flex-col pt-5">
-                <Flow data={data} onClose={closeCard} onRehold={() => void rehold()} />
+                <Flow data={data} onClose={closeCard} onRehold={() => void rehold()} embedded={embedded} />
               </div>
             ) : table ? (
               <div className="flex min-h-0 flex-1 flex-col">
@@ -261,7 +271,7 @@ export function GuestWidget({ data, today, turnstileSiteKey, turnstileMode, embe
       {!isDesktop ? (
         <>
           <CardSheet
-            open={Boolean(table) && !inFlow && !picking}
+            open={Boolean(table) && !inFlow && !picking && !seated3d}
             onClose={closeCard}
             label={table ? `${table.label}, table details` : "Table details"}
           >
@@ -279,7 +289,7 @@ export function GuestWidget({ data, today, turnstileSiteKey, turnstileMode, embe
             ) : null}
           </CardSheet>
           <BottomSheet open={inFlow} onOpenChange={() => undefined} title="Reserve your table" modal full dismissible={false}>
-            <Flow data={data} onClose={closeCard} onRehold={() => void rehold()} />
+            <Flow data={data} onClose={closeCard} onRehold={() => void rehold()} embedded={embedded} />
           </BottomSheet>
           <BottomSheet open={picking} onOpenChange={setPicking} title="Choose a date, time and party size" modal>
             {picker}

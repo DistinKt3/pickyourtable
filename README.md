@@ -21,7 +21,7 @@ Then open:
 | `/v/orchard-room` | A second fixture venue with a different layout, time zone and tiers                                                     |
 | `/demo/halcyon`   | A stand-in for the venue's own website, using the one-line embed                                                        |
 | `/portal`         | The venue portal. Sign in as `owner@halcyon.example` or `host@halcyon.example`; the magic link arrives in the dev inbox |
-| `/dev/mail`       | Dev inbox: every email the app sends, in development                                                                    |
+| `/dev/mail`       | Dev inbox: every email the app sends, in development (elsewhere, only a signed-in operator's own mail)                  |
 
 Payments run against a local Stripe simulator until you add Stripe test keys (see below). No real money moves in any mode: the app refuses live keys.
 
@@ -47,6 +47,8 @@ The same script runs automatically: `pnpm test:e2e tests/e2e/demo.spec.ts`.
 | `pnpm test`                                          | Vitest unit and integration tests (recreates the `pyt_test` database)       |
 | `pnpm test:e2e`                                      | Playwright against a production build on :3100 with its own database        |
 | `pnpm screens`                                       | Device screenshot matrix into `tests/screens/__output__/matrix`             |
+| `pnpm screens:portal` / `pnpm screens:3d`            | Portal screens (iPad and desktop, light and dark) and 3D room captures      |
+| `pnpm venue:renders` / `pnpm venue:assets`           | Seat-view renders, and a venue's model and photos (see below)               |
 | `pnpm audit`                                         | Dependency vulnerabilities (must be zero)                                   |
 | `pnpm secrets`                                       | gitleaks over the whole git history                                         |
 | `pnpm semgrep`                                       | Semgrep static analysis (TypeScript, React, Next.js, secrets, OWASP Top 10) |
@@ -67,8 +69,8 @@ Next.js 16.4.2 (App Router, Turbopack, React Compiler), React 19.3.1, TypeScript
 
 1. Write `venues/<id>/venue.json` (validated on load; `pnpm test` checks every venue folder).
 2. `pnpm db:seed <id>`.
-3. Render the seat views: run the app with `PYT_RENDER_ROUTE=1`, then `npx tsx --conditions=react-server scripts/render-seat-views.ts <id>`.
-4. Optional: `venues/<id>/model.glb` (3 MB or less) and photos in `venues/<id>/photos/<photoId>.jpg` with `photoId` set on the table, then `npx tsx --conditions=react-server scripts/venue-assets.ts <id>`. A photo always replaces the render.
+3. Render the seat views: run the app with `PYT_RENDER_ROUTE=1`, then `pnpm venue:renders <id>` (resumable; it writes AVIF, WebP and an email JPEG per table, at the 1.15 m eye height and 26 mm lens).
+4. Optional: `venues/<id>/model.glb` (3 MB or less; `pnpm test` fails over budget) and photos in `venues/<id>/photos/<photoId>.jpg` with `photoId` set on the table, then `pnpm venue:assets <id>`. A photo always replaces the render.
 5. The owner approves every table in Venue review and goes live.
 
 ## Stripe test mode

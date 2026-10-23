@@ -167,3 +167,67 @@ test("G-12: one script tag adds the button; the widget opens full screen and che
   await expect(overlay).toBeHidden();
   await expect(page.getByRole("button", { name: "Choose your table" })).toBeVisible();
 });
+
+test("G-12 fallback: from the embed, the same hold continues in a new tab on our site", async ({ page, context }, info) => {
+  test.skip(info.project.name !== "phone");
+  const date = sunday(3);
+  await page.goto("/demo/halcyon");
+  await page.getByRole("button", { name: "Choose your table" }).click();
+  const frame = page.frameLocator('iframe[title="Choose your table"]');
+  await expect(frame.getByRole("heading", { name: "Halcyon" })).toBeVisible();
+  const widget = page.frames().find((f) => f.url().includes("/v/halcyon"));
+  if (!widget) throw new Error("the widget frame did not load");
+  await pickSlot(widget, date, formatTimeLabel("19:15"), 2);
+  await tapTable(widget, "Window 6");
+  await frame.getByRole("button", { name: /^Reserve this table/ }).click();
+  await frame.getByLabel("Name").fill("Drew Wallet");
+  await frame.getByLabel("Email").fill(`drew+${Date.now()}@example.com`);
+  await frame.getByLabel("Mobile").fill("+1 415 555 0188");
+  await frame.getByRole("button", { name: /^Continue to payment/ }).click();
+
+  const [tab] = await Promise.all([
+    context.waitForEvent("page"),
+    frame.getByRole("link", { name: "Continue in a new tab" }).click(),
+  ]);
+  await tab.waitForLoadState();
+  // The same hold, with its countdown, and the token gone from the address.
+  await expect(tab.getByRole("heading", { name: "Your details" })).toBeVisible();
+  await expect(tab.getByRole("timer")).toBeVisible();
+  expect(new URL(tab.url()).hash).toBe("");
+  await tab.getByLabel("Name").fill("Drew Wallet");
+  await tab.getByLabel("Email").fill(`drew+${Date.now()}@example.com`);
+  await tab.getByLabel("Mobile").fill("+1 415 555 0188");
+  await tab.getByRole("button", { name: /^Continue to payment/ }).click();
+  await tab.getByRole("radio", { name: /Apple Pay/ }).check();
+  await tab.getByRole("button", { name: /^Pay \$/ }).click();
+  await expect(tab.getByRole("heading", { name: /You.re at Window 6/ })).toBeVisible({ timeout: 30_000 });
+  const rows = await query<{ n: string }>(
+    `select count(*) as n from reservation r join venue_table t on t.id = r.table_id
+     where t.code = 'W6' and r.status = 'confirmed' and r.starts_at = ($1 || ' 19:15')::timestamp at time zone '${TZ}'`,
+    [date],
+  );
+  expect(Number(rows[0]!.n)).toBe(1);
+});
+
+test("data contract: the second venue loads, renders and books with no code change", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop");
+  const date = addDays(nextWeekday(7, 3, "America/New_York"), 7 * 4); // a Sunday dinner in New York
+  await page.goto("/v/orchard-room");
+  await expect(page.getByRole("heading", { name: "The Orchard Room" })).toBeVisible();
+  await pickSlot(page, date, formatTimeLabel("19:00"), 2);
+  await tapTable(page, "Garden 2");
+  await page.getByRole("button", { name: /^Reserve this table/ }).click();
+  await page.getByLabel("Name").fill("Emery Orchard");
+  await page.getByLabel("Email").fill(`emery+${Date.now()}@example.com`);
+  await page.getByLabel("Mobile").fill("+1 212 555 0101");
+  await page.getByRole("button", { name: /^Continue to payment/ }).click();
+  await page.getByRole("radio", { name: /Visa ending 4242/ }).check();
+  await page.getByRole("button", { name: /^Pay \$/ }).click();
+  await expect(page.getByRole("heading", { name: /You.re at Garden 2/ })).toBeVisible({ timeout: 30_000 });
+  const [row] = await query<{ venue_id: string; local: string }>(
+    `select r.venue_id, to_char(r.starts_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') as local
+     from reservation r join venue_table t on t.id = r.table_id
+     where t.venue_id = 'orchard-room' and t.code = 'G2' and r.status = 'confirmed' order by r.created_at desc limit 1`,
+  );
+  expect(row).toEqual({ venue_id: "orchard-room", local: `${date} 19:00` });
+});

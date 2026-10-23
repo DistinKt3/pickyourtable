@@ -62,7 +62,6 @@ function TableLabel({ table, data, theme, rt }: { table: RoomTable; data: RoomDa
     <button
       ref={button}
       type="button"
-      aria-label={content.accessibleName}
       aria-pressed={isSelected}
       data-show="false"
       data-compact="false"
@@ -104,6 +103,7 @@ function TableLabel({ table, data, theme, rt }: { table: RoomTable; data: RoomDa
           />
         ) : null}
         <span>{content.title}</span>
+        <span className="sr-only">{content.context}</span>
         {/* When the plan is crowded the prices give way so every table keeps its name;
             the selected table keeps its price, and the accessible name always has it. */}
         <span
@@ -115,6 +115,10 @@ function TableLabel({ table, data, theme, rt }: { table: RoomTable; data: RoomDa
         >
           {content.price}
         </span>
+        {/* The price stays in the accessible name when the crowded plan hides it. */}
+        {content.price && !isSelected ? (
+          <span className="sr-only hidden group-data-[compact=true]:inline">{content.price}</span>
+        ) : null}
       </span>
     </button>
   );
