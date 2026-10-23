@@ -14,3 +14,6 @@ next-env.d.ts
 .vercel
 /tests/screens/__output__/
 /artifacts/tmp/
+
+# Agent worktrees
+.claude/worktrees/
