@@ -76,9 +76,18 @@ vec3 pytPattern(vec3 base, float kind, vec3 wp) {
     float x = p.x / 0.8 + 0.5 * mod(row, 2.0);
     shade -= max(pytGroove(p.y / 0.4, 0.009), pytGroove(x, 0.0045)) * 0.13;
     shade += pytTone(vec2(floor(x), row)) * 0.05;
-  } else {
+  } else if (kind < 4.5) {
     // Lawn: soft mottling at two scales.
     shade += (pytNoise(p * 0.7) - 0.5) * 0.10 + (pytNoise(p * 2.9 + 7.0) - 0.5) * 0.06;
+  } else if (kind < 6.5) {
+    // Subway tile on a wall, 30 x 7.5 cm in a running bond.
+    float u = (wp.x + wp.z) / 0.3;
+    float row = floor(wp.y / 0.075);
+    shade -= max(pytGroove(wp.y / 0.075, 0.03), pytGroove(u + 0.5 * mod(row, 2.0), 0.008)) * 0.14;
+  } else {
+    // Fluted millwork, 5 cm flutes.
+    float u = (wp.x + wp.z) / 0.05;
+    shade -= (0.5 - 0.5 * cos(fract(u) * 6.2831853)) * 0.12 * (1.0 - smoothstep(0.2, 0.5, fwidth(u)));
   }
   return base * (1.0 + shade);
 }
@@ -271,7 +280,7 @@ uniform vec3 uSkyZenith;
 uniform vec3 uSkyHorizon;
 vec3 pytSky(vec3 dir) {
   float h = clamp(dir.y, -1.0, 1.0);
-  float t = pow(max(h, 0.0), 0.55);
+  float t = pow(max(h, 0.0), 0.42);
   return mix(uSkyHorizon, uSkyZenith, t);
 }
 `;
@@ -386,7 +395,7 @@ void main() {
   vec3 d = normalize(vDir);
   vec3 col = pytSky(d);
   // A band of haze sitting on the horizon.
-  col = mix(col, uHazeColor, (1.0 - smoothstep(0.0, 0.12, abs(d.y))) * 0.65);
+  col = mix(col, uHazeColor, (1.0 - smoothstep(0.0, 0.07, abs(d.y))) * 0.5);
   if (uSilhouette > 0.5) {
     float az = atan(d.x, -d.z);
     float ridge;
@@ -416,13 +425,15 @@ export function createGlassMaterial(
 ): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
     color,
-    roughness: 0.05,
+    roughness: 0.12,
     metalness: 0,
     transparent: true,
     opacity,
     depthWrite: false,
     side: THREE.DoubleSide,
-    envMapIntensity: 1.4,
+    envMapIntensity: 0.9,
+    // A soft glint, not a hard sun dot.
+    specularIntensity: 0.3,
   });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uRise = shared.uRise;

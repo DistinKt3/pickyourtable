@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { boundsCenter, siteBounds, rotationY, type Vec2 } from "@/lib/venue/geometry";
 import type { Area, Fixture, Venue, Wall } from "@/lib/venue/schema";
 import type { FloorKind, Palette } from "../palette";
@@ -387,6 +388,109 @@ function bottle(color: string, h: number, seed: number): THREE.BufferGeometry {
   );
 }
 
+/**
+ * The kitchen's back wall, shown at eye level: subway tile, an open shelf of plates,
+ * bowls and copper pots. Built in the kitchen line's frame (its back is +z).
+ */
+function kitchenWall(L: number, h: number, D: number, p: Palette, seed: number): THREE.BufferGeometry[] {
+  const out: THREE.BufferGeometry[] = [];
+  const wallZ = D / 2 + 0.19;
+  const tile = softBox(L + 0.2, 1.3, 0.012, 0.004, 2);
+  out.push(paint(place(tile, 0, h, wallZ), p.wallCap, { roughness: 0.35, metalness: 0 }, { pattern: PATTERN.wallTiles }));
+  const shelfY = 1.5;
+  out.push(paint(place(softBox(L - 0.3, 0.035, 0.3, 0.01), 0, shelfY, wallZ - 0.16), p.chairWood, SATIN));
+  for (const x of [-L / 2 + 0.4, 0, L / 2 - 0.4])
+    out.push(paint(place(softBox(0.03, 0.12, 0.22, 0.006), x, shelfY - 0.12, wallZ - 0.12), p.steelDark, STEEL));
+  const copper = "#b9754f";
+  const spots = Math.floor((L - 0.6) / 0.42);
+  for (let i = 0; i < spots; i++) {
+    const x = -L / 2 + 0.5 + i * 0.42;
+    const kind = Math.floor(hash(seed * 11 + i) * 3);
+    const y = shelfY + 0.035;
+    if (kind === 0) {
+      for (let k = 0; k < 6; k++) out.push(place(plate(p.votive), x, y + k * 0.016, wallZ - 0.16));
+    } else if (kind === 1) {
+      const r = 0.1 + hash(i) * 0.03;
+      out.push(
+        paint(
+          place(
+            lathe(
+              [
+                [0, 0],
+                [r * 0.55, 0],
+                [r, r * 0.8],
+                [r - 0.006, r * 0.8],
+                [r * 0.5, 0.008],
+                [0, 0.008],
+              ],
+              18,
+            ),
+            x,
+            y,
+            wallZ - 0.16,
+          ),
+          p.votive,
+          { roughness: 0.3, metalness: 0 },
+        ),
+      );
+    } else {
+      const r = 0.11 + hash(i * 3) * 0.03;
+      const hh = 0.12 + hash(i * 5) * 0.06;
+      out.push(
+        paint(
+          place(
+            lathe(
+              [
+                [0, 0],
+                [r, 0],
+                [r, hh],
+                [r - 0.006, hh],
+                [r - 0.006, 0.01],
+                [0, 0.01],
+              ],
+              18,
+            ),
+            x,
+            y,
+            wallZ - 0.16,
+          ),
+          copper,
+          { roughness: 0.35, metalness: 0.4 },
+        ),
+      );
+    }
+  }
+  return out;
+}
+
+/**
+ * The wall behind the bar, shown at eye level: two lit shelves of bottles over the
+ * back bar. Built in the bar's frame (its back is +z).
+ */
+function barWall(L: number, D: number, p: Palette): THREE.BufferGeometry[] {
+  const out: THREE.BufferGeometry[] = [];
+  const wallZ = D / 2;
+  const tones = [p.bottle, "#b58a52", "#d7d9d2", "#7d8f6a", "#8c5a3c"];
+  [1.42, 1.78].forEach((y, row) => {
+    out.push(paint(place(softBox(L - 0.4, 0.025, 0.24, 0.008), 0, y, wallZ - 0.12), p.chairWood, SATIN));
+    out.push(
+      paint(place(softBox(L - 0.5, 0.008, 0.02, 0.004), 0, y - 0.01, wallZ - 0.22), p.downlight, {
+        roughness: 0.4,
+        metalness: 0,
+        glow: 0.6,
+      }),
+    );
+    const n = Math.floor((L - 0.6) / 0.1);
+    for (let i = 0; i < n; i++) {
+      const bh = 0.24 + hash(i * 7.3 + row) * 0.1;
+      out.push(
+        place(bottle(tones[(i + row * 2) % tones.length]!, bh, i + row * 31), -L / 2 + 0.35 + i * 0.1, y + 0.025, wallZ - 0.12),
+      );
+    }
+  });
+  return out;
+}
+
 function fixtures(
   venue: Venue,
   c: Colors,
@@ -408,7 +512,8 @@ function fixtures(
 
     switch (f.kind) {
       case "pass": {
-        parts.push(paint(softBox(L, h - 0.045, D, 0.02), p.stone, MATTE));
+        // Fluted oak front facing the counter, a steel pass shelf, plates waiting.
+        parts.push(paint(softBox(L, h - 0.045, D, 0.02), p.chairWood, SATIN, { pattern: PATTERN.flutes }));
         parts.push(paint(place(softBox(L + 0.03, 0.045, D + 0.08, 0.012), 0, h - 0.045, 0), p.steel, STEEL));
         const n = Math.floor(L / 0.9);
         for (let i = 0; i < n; i++) parts.push(place(plate(p.votive), -L / 2 + (L / n) * (i + 0.5), h, -0.02));
@@ -416,6 +521,51 @@ function fixtures(
         for (const x of [-L / 2 + 0.2, 0, L / 2 - 0.2])
           sit.push(paint(place(post(0.02, 0.02, h, 1.78, 8), x, 0, 0), p.steelDark, STEEL));
         sit.push(paint(place(softBox(L - 0.2, 0.07, 0.16, 0.02), 0, 1.78, 0), p.steelDark, STEEL));
+        // Heat lamps hanging under the gantry, glowing warm.
+        const lamps = Math.max(3, Math.floor(L / 0.8));
+        for (let i = 0; i < lamps; i++) {
+          const x = -L / 2 + 0.3 + ((L - 0.6) / (lamps - 1)) * i;
+          sit.push(paint(place(post(0.006, 0.006, 1.6, 1.78, 6), x, 0, 0), p.steelDark, STEEL));
+          sit.push(
+            paint(
+              place(
+                lathe(
+                  [
+                    [0, 0],
+                    [0.07, 0],
+                    [0.04, 0.09],
+                    [0, 0.09],
+                  ],
+                  14,
+                ),
+                x,
+                1.52,
+                0,
+              ),
+              p.steelDark,
+              STEEL,
+            ),
+          );
+          sit.push(
+            paint(
+              place(
+                lathe(
+                  [
+                    [0, 0],
+                    [0.05, 0],
+                    [0, 0.004],
+                  ],
+                  14,
+                ),
+                x,
+                1.515,
+                0,
+              ),
+              p.downlight,
+              { roughness: 0.4, metalness: 0, glow: 1 },
+            ),
+          );
+        }
         break;
       }
       case "kitchen-line": {
@@ -454,7 +604,8 @@ function fixtures(
             ),
           );
         }
-        sit.push(paint(place(softBox(L, 0.46, 0.9, 0.03), 0, 2.08, D / 2 - 0.45 + 0.1), p.steel, STEEL));
+        sit.push(paint(place(softBox(L, 0.46, 0.8, 0.03), 0, 1.95, D / 2 - 0.4 + 0.18), p.steel, STEEL));
+        sit.push(...kitchenWall(L, h, D, p, fi));
         break;
       }
       case "host-stand": {
@@ -544,6 +695,7 @@ function fixtures(
           const bh = 0.24 + hash(i * 3.1) * 0.1;
           parts.push(place(bottle(tones[i % tones.length]!, bh, i), -L / 2 + 0.1 + i * 0.11 + 0.055, h, D / 2 - shelfD / 2));
         }
+        sit.push(...barWall(L, D, p));
         for (let i = 0; i < 5; i++) {
           parts.push(
             paint(
@@ -639,6 +791,43 @@ function ceiling(venue: Venue, c: Colors, sit: THREE.BufferGeometry[]) {
 
 /* ------------------------------------------------------------ Surroundings */
 
+/**
+ * Breaks a long span into pieces: short near the site, long far away. Huge sliver
+ * triangles that cross the near plane can rasterize with wrong depth on some GPUs, so
+ * nothing the camera can get close to is ever one giant triangle.
+ */
+export function spans(from: number, to: number, nearFrom: number, nearTo: number, step: number): [number, number][] {
+  const cuts = new Set<number>([from, to]);
+  const a = Math.max(from, nearFrom);
+  const b = Math.min(to, nearTo);
+  if (a < b) for (let x = a; x <= b + 1e-6; x += step) cuts.add(Math.min(x, b));
+  const sorted = [...cuts].filter((x) => x >= from && x <= to).sort((p, q) => p - q);
+  const out: [number, number][] = [];
+  for (let i = 0; i + 1 < sorted.length; i++) if (sorted[i + 1]! - sorted[i]! > 1e-6) out.push([sorted[i]!, sorted[i + 1]!]);
+  return out;
+}
+
+/** A floor-level rectangle as a grid of cells, fine near the site and coarse beyond. */
+function groundPatch(
+  minX: number,
+  maxX: number,
+  minZ: number,
+  maxZ: number,
+  fine: { minX: number; maxX: number; minZ: number; maxZ: number },
+  y: number,
+): THREE.BufferGeometry[] {
+  const out: THREE.BufferGeometry[] = [];
+  for (const [x0, x1] of spans(minX, maxX, fine.minX, fine.maxX, 6)) {
+    for (const [z0, z1] of spans(minZ, maxZ, fine.minZ, fine.maxZ, 6)) {
+      const p = new THREE.PlaneGeometry(x1 - x0, z1 - z0);
+      p.rotateX(-Math.PI / 2);
+      p.translate((x0 + x1) / 2, y, (z0 + z1) / 2);
+      out.push(p);
+    }
+  }
+  return out;
+}
+
 function surroundings(
   venue: Venue,
   c: Colors,
@@ -647,6 +836,8 @@ function surroundings(
   const center = boundsCenter(b);
   const siteRadius = Math.hypot(b.maxX - b.minX, b.maxZ - b.minZ) / 2;
   const R = 700;
+  const NEAR = 60;
+  const fine = { minX: b.minX - NEAR, maxX: b.maxX + NEAR, minZ: b.minZ - NEAR, maxZ: b.maxZ + NEAR };
   let minX = center.x - R;
   let maxX = center.x + R;
   let minZ = center.z - R;
@@ -669,33 +860,43 @@ function surroundings(
     }
   }
   const groundColor = c.palette.ground[venue.surroundings.ground];
-  const parts: THREE.BufferGeometry[] = [];
-  const plane = new THREE.PlaneGeometry(maxX - minX, maxZ - minZ, 1, 1);
-  plane.rotateX(-Math.PI / 2);
-  plane.translate((minX + maxX) / 2, GROUND_Y, (minZ + maxZ) / 2);
-  parts.push(paint(plane, groundColor, MATTE, { pattern: venue.surroundings.ground === "lawn" ? PATTERN.lawn : PATTERN.none }));
+  const pattern = venue.surroundings.ground === "lawn" ? PATTERN.lawn : PATTERN.none;
+  const parts: THREE.BufferGeometry[] = groundPatch(minX, maxX, minZ, maxZ, fine, GROUND_Y).map((g) =>
+    paint(g, groundColor, MATTE, { pattern }),
+  );
 
   let waterGeo: THREE.BufferGeometry | null = null;
   if (water && shore) {
-    // Quay wall and coping along the water line.
+    // Quay wall and coping along the water line, in pieces.
     const alongX = shore.dx === 0;
-    const len = 2 * R;
-    const face = new THREE.PlaneGeometry(len, GROUND_Y - WATER_Y);
-    // Face the water.
     const ry = alongX ? (shore.dz < 0 ? Math.PI : 0) : shore.dx > 0 ? Math.PI / 2 : -Math.PI / 2;
-    face.translate(0, (GROUND_Y + WATER_Y) / 2, 0);
-    place(face, alongX ? center.x : shore.x, 0, alongX ? shore.z : center.z, ry);
-    parts.push(paint(face, c.palette.quay, MATTE));
-    const coping = softBox(len, 0.06, 0.32, 0.02, 2);
-    coping.translate(0, GROUND_Y, 0.16 - 0.04);
-    place(coping, alongX ? center.x : shore.x, 0, alongX ? shore.z : center.z, ry + Math.PI);
-    parts.push(paint(coping, c.palette.stone, MATTE));
+    const lineMin = alongX ? center.x - R : center.z - R;
+    const lineMax = alongX ? center.x + R : center.z + R;
+    const nearMin = alongX ? fine.minX : fine.minZ;
+    const nearMax = alongX ? fine.maxX : fine.maxZ;
+    for (const [a, z] of spans(lineMin, lineMax, nearMin, nearMax, 8)) {
+      const len = z - a;
+      const mid = (a + z) / 2;
+      const face = new THREE.PlaneGeometry(len, GROUND_Y - WATER_Y);
+      face.translate(0, (GROUND_Y + WATER_Y) / 2, 0);
+      place(face, alongX ? mid : shore.x, 0, alongX ? shore.z : mid, ry);
+      parts.push(paint(face, c.palette.quay, MATTE));
+      const coping = softBox(len, 0.06, 0.32, 0.02, 2);
+      coping.translate(0, GROUND_Y, 0.16 - 0.04);
+      place(coping, alongX ? mid : shore.x, 0, alongX ? shore.z : mid, ry + Math.PI);
+      parts.push(paint(coping, c.palette.stone, MATTE));
+    }
     const sea = 5000;
-    const wp = new THREE.PlaneGeometry(alongX ? 2 * sea : sea, alongX ? sea : 2 * sea, 1, 1);
-    wp.rotateX(-Math.PI / 2);
-    wp.translate(alongX ? center.x : shore.x + (shore.dx * sea) / 2, WATER_Y, alongX ? shore.z + (shore.dz * sea) / 2 : center.z);
-    for (const name of Object.keys(wp.attributes)) if (name !== "position") wp.deleteAttribute(name);
-    waterGeo = wp;
+    const wMinX = alongX ? center.x - sea : shore.dx > 0 ? shore.x : shore.x - sea;
+    const wMaxX = alongX ? center.x + sea : shore.dx > 0 ? shore.x + sea : shore.x;
+    const wMinZ = alongX ? (shore.dz > 0 ? shore.z : shore.z - sea) : center.z - sea;
+    const wMaxZ = alongX ? (shore.dz > 0 ? shore.z + sea : shore.z) : center.z + sea;
+    const tiles = groundPatch(wMinX, wMaxX, wMinZ, wMaxZ, fine, WATER_Y);
+    for (const t of tiles) for (const name of Object.keys(t.attributes)) if (name !== "position") t.deleteAttribute(name);
+    waterGeo = mergeGeometries(
+      tiles.map((t) => (t.index ? t.toNonIndexed() : t)),
+      false,
+    );
   }
   return {
     ground: merge(parts),

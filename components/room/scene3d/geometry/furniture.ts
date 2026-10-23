@@ -75,7 +75,7 @@ export function chairGeometry(c: Pick<FurnitureColors, "wood" | "upholstery" | "
   const shape = new THREE.Shape();
   const cz = -backR;
   const pts: [number, number][] = [];
-  const steps = 7;
+  const steps = 10;
   for (let i = 0; i <= steps; i++) {
     const a = -half + (2 * half * i) / steps;
     pts.push([Math.sin(a) * backR, cz + Math.cos(a) * backR]);
@@ -87,7 +87,7 @@ export function chairGeometry(c: Pick<FurnitureColors, "wood" | "upholstery" | "
   pts.forEach(([x, z], i) => (i === 0 ? shape.moveTo(x, -z) : shape.lineTo(x, -z)));
   shape.closePath();
   const backH = 0.27;
-  const back = slab(shape, backH, 0.009, 4, 1);
+  const back = slab(shape, backH, 0.012, 4, 2);
   back.applyMatrix4(new THREE.Matrix4().makeRotationX(rake));
   parts.push(paint(place(back, 0, 0.53, lz + 0.035 - 0.018), c.outdoor ? c.wood : c.upholstery, c.outdoor ? frame : UPHOLSTERY));
   return merge(parts);
@@ -146,7 +146,7 @@ function plateGeometry(color: string): THREE.BufferGeometry {
     [0.08, 0.001],
     [0, 0.001],
   ];
-  return paint(lathe(profile.reverse(), 22), color, GLAZE);
+  return paint(lathe(profile.reverse(), 32), color, GLAZE);
 }
 
 function wineGlassGeometry(color: string): THREE.BufferGeometry {
@@ -164,7 +164,7 @@ function wineGlassGeometry(color: string): THREE.BufferGeometry {
     [0.029, 0.152],
     [0.0, 0.11],
   ];
-  return paint(lathe(profile, 14), color, { roughness: 0.18, metalness: 0 });
+  return paint(lathe(profile, 16), color, { roughness: 0.12, metalness: 0 });
 }
 
 function votiveGeometry(color: string): THREE.BufferGeometry {

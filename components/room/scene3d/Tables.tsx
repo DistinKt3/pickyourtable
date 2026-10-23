@@ -69,7 +69,7 @@ function furnitureColors(palette: Palette, bookable: boolean, tierColor: string,
     wood: bookable ? palette.chairWood : palette.chairWoodQuiet,
     upholstery,
     plate: palette.votive,
-    glassware: palette.theme === "dark" ? "#7f8b90" : "#e6ecee",
+    glassware: palette.theme === "dark" ? "#7d898e" : "#d9e3e6",
     votive: palette.votive,
     outdoor,
   };

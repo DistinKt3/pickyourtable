@@ -130,7 +130,7 @@ export const LIGHT: Palette = {
     poolColor: "#fff3df",
     poolIntensity: 9,
     interior: "#ffe2bd",
-    interiorIntensity: 0,
+    interiorIntensity: 0.7,
   },
   contactShadow: 0.85,
   ao: { intensity: 3, color: "#2a2018" },
@@ -205,3 +205,29 @@ export const DUSK: Palette = {
 export function paletteFor(theme: Theme): Palette {
   return theme === "dark" ? DUSK : LIGHT;
 }
+
+/**
+ * Seat renders: late-afternoon daylight. A warm, lower key light, a cream horizon
+ * over a deeper sea, and a warm interior a touch darker than the view outside, the way
+ * a photograph from the table would read.
+ */
+export const RENDER: Palette = {
+  ...LIGHT,
+  water: { deep: "#2d5c6d", shallow: "#5f8e9a", sky: "#e9dccb" },
+  sky: { zenith: "#6f9ec4", horizon: "#f3e5cf", haze: "#efe2cf", far: "#9fa8aa" },
+  frame: "#5f5a54",
+  glassOpacity: 0.12,
+  light: {
+    ...LIGHT.light,
+    hemiSky: "#e3e9ee",
+    hemiGround: "#dcc8ab",
+    hemi: 0.8,
+    key: "#ffd9ab",
+    keyIntensity: 3.3,
+    keyElevation: 34,
+    env: 0.3,
+    interior: "#ffcf9c",
+    interiorIntensity: 1.3,
+  },
+  exposure: 1.32,
+};
