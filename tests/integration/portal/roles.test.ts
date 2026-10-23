@@ -204,6 +204,10 @@ describe("cross-venue: an Owner sees and changes only their own venue", () => {
       request("GET", "/api/portal/blackouts", { cookie: orchardOwner }),
     );
     expect(theirs.body.blackouts.map((b) => b.id)).not.toContain(id);
+
+    // Leave no fee or blackout behind for other test files on the same date.
+    await db().delete(priceRule).where(eq(priceRule.id, rule!.id));
+    await db().delete(blackout).where(eq(blackout.id, id));
   });
 
   it("cannot block another venue's table or read another venue's review or history", async () => {

@@ -232,4 +232,7 @@ export async function resetBookingData() {
     TRUNCATE reservation, guest, blackout, webhook_event, sim_payment_intent, sim_refund, sim_event,
              email_message, audit_log, rate_limit RESTART IDENTITY CASCADE
   `);
+  // No venue ships special-date fees, so any here were left by another test file and
+  // would change this file's prices on that date.
+  await db().execute(sql`DELETE FROM price_rule WHERE day_type = 'special'`);
 }
