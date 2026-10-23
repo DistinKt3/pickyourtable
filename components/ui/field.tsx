@@ -20,18 +20,18 @@ export function Field({ label, hint, error, optional, children, className }: Fie
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
   return (
     <div className={cx("flex flex-col gap-1.5", className)}>
-      <label htmlFor={id} className="flex items-baseline justify-between text-[0.9375rem] font-medium text-ink">
+      <label htmlFor={id} className="flex items-baseline justify-between text-base font-medium text-ink">
         <span>{label}</span>
         {optional ? <span className="text-sm font-normal text-ink-3">Optional</span> : null}
       </label>
       {children({ id, describedBy, invalid: Boolean(error) })}
       {hint && !error ? (
-        <p id={hintId} className="text-sm text-ink-3">
+        <p id={hintId} className="text-base text-ink-3">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={errorId} className="text-sm font-medium text-danger">
+        <p id={errorId} className="text-base font-medium text-danger">
           {error}
         </p>
       ) : null}

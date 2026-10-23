@@ -96,7 +96,10 @@ export function ReviewScreen({
         description="Check that each table sits where it does in the room and that its seat view is right, then approve it."
         actions={
           live ? (
-            <span className="flex min-h-11 items-center gap-2 rounded-full bg-success-surface px-4 text-[0.9375rem] font-semibold text-success">
+            <span
+              data-meta
+              className="flex min-h-11 items-center gap-2 rounded-full bg-success-surface px-4 text-[0.9375rem] font-semibold text-success"
+            >
               <span aria-hidden className="size-2 rounded-full bg-success" />
               Live{liveSince ? ` since ${formatDate(liveSince, { weekday: "short", year: true })}` : ""}
             </span>
@@ -255,7 +258,7 @@ function TableReview({
         </figure>
         <figure className="flex flex-col gap-2">
           <SeatView t={t} available={available} />
-          <figcaption className="text-sm text-ink-3">View from the main seat</figcaption>
+          <figcaption className="text-base text-ink-3">View from the main seat</figcaption>
         </figure>
         <div className="flex flex-col gap-3 sm:col-span-2 lg:col-span-1 lg:pl-2">
           <div className="flex items-start justify-between gap-3">
@@ -299,7 +302,7 @@ function TableReview({
             )}
           </div>
           {error ? (
-            <p role="alert" className="text-[0.9375rem] font-medium text-danger">
+            <p role="alert" className="text-base font-medium text-danger">
               {error}
             </p>
           ) : null}
@@ -324,8 +327,8 @@ function SeatView({ t, available }: { t: ReviewTable; available: boolean }) {
       {missing ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
           <ImageOff aria-hidden className="size-6 text-ink-3" strokeWidth={1.5} />
-          <p className="text-[0.9375rem] font-medium text-ink-2">No seat view yet</p>
-          <p className="text-sm text-ink-3">
+          <p className="text-base font-medium text-ink-2">No seat view yet</p>
+          <p className="text-base text-ink-3">
             {t.bookable ? "Its render or photo hasn't been made." : "Host-seated tables have no seat view."}
           </p>
         </div>

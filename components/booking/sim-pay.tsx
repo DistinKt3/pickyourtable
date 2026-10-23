@@ -71,7 +71,7 @@ export function SimPay({
     <div>
       <fieldset>
         <legend className="mb-2 text-base font-medium">Payment method</legend>
-        <p className="mb-3 text-sm text-ink-3">Simulated Stripe test mode. No real card is charged.</p>
+        <p className="mb-3 text-base text-ink-3">Simulated Stripe test mode. No real card is charged.</p>
         <div className="flex flex-col gap-2">
           {METHODS.map((m) => (
             <label

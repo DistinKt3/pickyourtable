@@ -140,9 +140,7 @@ export function SeatElsewhereDialog({
           {chosenNext ? ` ${chosen.label} is paid for ${formatTime(chosenNext.slot.time)} by ${chosenNext.guestName}.` : ""}
         </Banner>
       ) : (
-        <p className="mt-4 text-[0.9375rem] text-ink-3">
-          Their table fee is refunded automatically when they sit somewhere else.
-        </p>
+        <p className="mt-4 text-base text-ink-3">Their table fee is refunded automatically when they sit somewhere else.</p>
       )}
     </Dialog>
   );

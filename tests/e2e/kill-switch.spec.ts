@@ -18,8 +18,14 @@ test("kill switch hides the widget and refuses guest APIs, then restores", async
       .toBe(true);
     test.info().annotations.push({ type: "hidden after", description: `${((Date.now() - off) / 1000).toFixed(1)} s` });
     await expect(page.getByRole("link", { name: "(415) 555-0142" })).toBeVisible();
+    // Guest APIs refuse within the same 60 s of the switch.
+    await expect
+      .poll(async () => (await request.get("/api/v/halcyon/availability?date=2030-01-04&time=19:00&party=2")).status(), {
+        timeout: Math.max(1_000, 60_000 - (Date.now() - off)),
+        intervals: [1_000],
+      })
+      .toBe(503);
     const res = await request.get("/api/v/halcyon/availability?date=2030-01-04&time=19:00&party=2");
-    expect(res.status()).toBe(503);
     expect((await res.json()).error.code).toBe("widget_disabled");
   } finally {
     await query(`update feature_flag set enabled = true, updated_at = now() where key = 'pyt_widget_enabled'`);

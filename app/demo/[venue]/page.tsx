@@ -35,7 +35,7 @@ export default async function DemoVenueSite({ params }: { params: Promise<{ venu
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <div className="min-h-dvh bg-[#f3efe7] text-[#22201c] dark:bg-[#141210] dark:text-[#efe9df]">
-      <div className="bg-[#22201c] px-4 py-2 text-center text-sm text-white/80">
+      <div className="bg-[#22201c] px-4 py-2 text-center text-base text-white/80">
         Demo of a venue&rsquo;s own website. The button below is added by one script tag.
       </div>
       <main className="mx-auto flex max-w-3xl flex-col items-center px-6 py-24 text-center">

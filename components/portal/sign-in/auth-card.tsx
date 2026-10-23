@@ -21,7 +21,7 @@ export function AuthCard({
           <h1 className="mt-2 font-display text-display-l text-ink">{title}</h1>
           <div className="mt-4">{children}</div>
         </div>
-        <p className="mt-6 text-center text-sm text-balance text-ink-3">
+        <p className="mt-6 text-center text-base text-balance text-ink-3">
           For venue owners and hosts. Guests book from the venue&rsquo;s own link.
         </p>
       </div>

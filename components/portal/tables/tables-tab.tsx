@@ -60,7 +60,7 @@ export function TablesTab({ initial, pricedTiers }: { initial: TablesResponse; p
                 <TierDot color={tier.color} />
                 {tier.name}
               </h2>
-              <p className="text-[0.9375rem] text-ink-3 tabular">
+              <p data-meta className="text-[0.9375rem] text-ink-3 tabular">
                 {items.length} {items.length === 1 ? "table" : "tables"} ·{" "}
                 {onCount
                   ? `${onCount} bookable online`
@@ -89,12 +89,13 @@ export function TablesTab({ initial, pricedTiers }: { initial: TablesResponse; p
                     <button
                       type="button"
                       onClick={() => setEditing(t)}
-                      aria-label={`Attributes for ${t.label}: ${t.attributes.join(", ") || "none"}. Edit`}
                       className="group -mx-2 flex min-h-11 min-w-0 items-center gap-2 justify-self-start rounded-control px-2 text-left transition-colors hover:bg-surface-2 sm:col-span-2 sm:row-start-2 xl:col-span-1 xl:col-start-2 xl:row-start-1"
                     >
                       <span className={cx("min-w-0 text-[0.9375rem]", t.attributes.length ? "text-ink-2" : "text-ink-3")}>
                         {t.attributes.length ? t.attributes.map(capitalize).join(" · ") : "No attributes"}
                       </span>
+                      {/* The name starts with the visible text (WCAG 2.5.3). */}
+                      <span className="sr-only">, edit attributes for {t.label}</span>
                       <Pencil aria-hidden className="size-4 shrink-0 text-ink-3 group-hover:text-ink" />
                     </button>
                     <div className="flex flex-wrap items-center gap-4 sm:col-start-2 sm:row-start-1 sm:justify-end xl:col-start-3">
@@ -144,7 +145,7 @@ export function TablesTab({ initial, pricedTiers }: { initial: TablesResponse; p
                       <p
                         role={s.error ? "alert" : "status"}
                         className={cx(
-                          "text-[0.9375rem] sm:col-span-2 xl:col-span-3",
+                          "text-base sm:col-span-2 xl:col-span-3",
                           s.error ? "font-medium text-danger" : "text-ink-3",
                         )}
                       >

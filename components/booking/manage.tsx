@@ -217,7 +217,7 @@ function BookingView({
             {formatMoney(b.priceCents)} paid{b.refundCents > 0 ? `, ${formatMoney(b.refundCents)} refunded` : ""}
           </dd>
         </dl>
-        {b.note ? <p className="mt-4 rounded-card bg-surface-2 px-4 py-3 text-[0.9375rem] text-ink-2">{b.note}</p> : null}
+        {b.note ? <p className="mt-4 rounded-card bg-surface-2 px-4 py-3 text-base text-ink-2">{b.note}</p> : null}
 
         {b.status === "confirmed" && !done ? (
           <>
@@ -236,7 +236,7 @@ function BookingView({
                 </Button>
               ) : null}
             </div>
-            <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-ink-3">
+            <p className="mt-4 flex items-start gap-2 text-base leading-relaxed text-ink-3">
               <Check aria-hidden className="mt-0.5 size-4 shrink-0" />
               {res.refund.explanation}
             </p>

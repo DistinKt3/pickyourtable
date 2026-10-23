@@ -74,3 +74,30 @@ export function formatTimeLabel(hhmm: string): string {
   const [h, m] = hhmm.split(":").map(Number) as [number, number];
   return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "pm" : "am"}`;
 }
+
+/**
+ * PRD interface rule: body text is 16 px or larger. Every visible run of five or more
+ * words counts as body text; shorter runs (counts, prices, "4 seats") and lines marked
+ * `data-meta` may be smaller.
+ */
+export async function expectBodyText16(page: Page, label: string) {
+  const small = await page.evaluate(() => {
+    const found: string[] = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const text = (n.textContent ?? "").replace(/\s+/g, " ").trim();
+      const el = n.parentElement;
+      if (!el || text.split(" ").length < 5) continue;
+      // data-meta marks metadata lines (a table's attributes, counts): not body text.
+      // Controls (buttons) have their own sizes; the rule is for text people read.
+      if (el.closest("[aria-hidden='true'], [data-meta], button, .sr-only, script, style, noscript, pre")) continue;
+      const r = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      if (r.width === 0 || r.height === 0 || style.visibility === "hidden" || Number(style.opacity) === 0) continue;
+      const px = Number.parseFloat(style.fontSize);
+      if (px < 15.5) found.push(`${px}px: ${text.slice(0, 60)}`);
+    }
+    return found;
+  });
+  expect(small, `${label}: ${small.join(" | ")}`).toEqual([]);
+}

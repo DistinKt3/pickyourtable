@@ -195,7 +195,7 @@ export function BlackoutsScreen({
                   />
                 </div>
               )}
-              {allDay && errors.time ? <p className="text-sm font-medium text-danger">{errors.time}</p> : null}
+              {allDay && errors.time ? <p className="text-base font-medium text-danger">{errors.time}</p> : null}
             </div>
             <TextField
               label="Reason"
@@ -278,7 +278,9 @@ export function BlackoutsScreen({
                             )}
                             <span className="text-ink-2 tabular"> · {when(b)}</span>
                           </p>
-                          <p className="truncate text-[0.9375rem] text-ink-3">{b.reason}</p>
+                          <p data-meta className="truncate text-[0.9375rem] text-ink-3">
+                            {b.reason}
+                          </p>
                         </div>
                         <Button
                           variant="ghost"

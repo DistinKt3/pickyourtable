@@ -296,7 +296,7 @@ export function TonightScreen({
         <Panel className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {selectedTable ? (
             <div className="flex min-h-12 items-center justify-between gap-3 border-b border-line bg-surface-1 py-1 pr-2 pl-5">
-              <p className="text-[0.9375rem] text-ink-2">
+              <p className="text-base text-ink-2">
                 <TableName label={selectedTable.label} className="text-[1.1875rem] text-ink" /> is highlighted on the plan
               </p>
               <Button variant="ghost" size="sm" onClick={() => setSelected(null)} icon={<X aria-hidden className="size-4" />}>

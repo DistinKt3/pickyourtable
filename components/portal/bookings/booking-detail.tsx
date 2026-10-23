@@ -188,7 +188,7 @@ export function BookingDetail({
         {history === null ? (
           <div className="h-12 animate-pulse rounded-card bg-surface-2" />
         ) : history.length === 0 ? (
-          <p className="text-[0.9375rem] text-ink-3">No changes since it was booked.</p>
+          <p className="text-base text-ink-3">No changes since it was booked.</p>
         ) : (
           <ol className="flex flex-col gap-2">
             {history.map((h) => (

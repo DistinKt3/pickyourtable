@@ -12,14 +12,17 @@ import { featureFlag } from "@/db/schema";
 export const WIDGET_FLAG = "pyt_widget_enabled";
 const TTL_MS = 15_000;
 
-let cache: { value: boolean; at: number } | null = null;
+// One cache per process on globalThis: Next bundles pages and route handlers separately,
+// and a module-level cache would let the page and the APIs disagree for up to a TTL.
+const g = globalThis as unknown as { __pytWidgetFlag?: { value: boolean; at: number } | null };
 
 export async function isWidgetEnabled(): Promise<boolean> {
   if (process.env.PYT_WIDGET_ENABLED === "false") return false;
+  const cache = g.__pytWidgetFlag;
   if (cache && Date.now() - cache.at < TTL_MS) return cache.value;
   const rows = await db().select({ enabled: featureFlag.enabled }).from(featureFlag).where(eq(featureFlag.key, WIDGET_FLAG));
   const value = rows[0]?.enabled ?? true;
-  cache = { value, at: Date.now() };
+  g.__pytWidgetFlag = { value, at: Date.now() };
   return value;
 }
 
@@ -28,9 +31,9 @@ export async function setFlag(key: string, enabled: boolean): Promise<void> {
     .insert(featureFlag)
     .values({ key, enabled })
     .onConflictDoUpdate({ target: featureFlag.key, set: { enabled, updatedAt: new Date() } });
-  if (key === WIDGET_FLAG) cache = null;
+  if (key === WIDGET_FLAG) g.__pytWidgetFlag = null;
 }
 
 export function clearFlagCache(): void {
-  cache = null;
+  g.__pytWidgetFlag = null;
 }

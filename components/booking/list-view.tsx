@@ -41,7 +41,7 @@ export function ListView({ data }: { data: RoomData }) {
                   </p>
                 ) : null}
               </header>
-              <p className="-mt-1 mb-3 text-[0.9375rem] text-ink-2">{tier.description}</p>
+              <p className="-mt-1 mb-3 text-base text-ink-2">{tier.description}</p>
               <ul className="flex flex-col gap-2">
                 {tables.map((t) => {
                   const a = availability?.[t.id];
@@ -67,7 +67,7 @@ export function ListView({ data }: { data: RoomData }) {
                             {t.label}
                             <span className="sr-only">, {tier.name}</span>
                           </p>
-                          <p className="truncate text-[0.9375rem] text-ink-3">
+                          <p data-meta className="truncate text-[0.9375rem] text-ink-3">
                             {t.seats} seats{t.attributes.length ? ` · ${t.attributes.join(", ")}` : ""}
                           </p>
                         </div>
@@ -95,7 +95,7 @@ export function ListView({ data }: { data: RoomData }) {
             <h2 id="tier-others" className="font-medium">
               Other tables
             </h2>
-            <p className="mt-1 text-[0.9375rem] text-ink-2">
+            <p className="mt-1 text-base text-ink-2">
               {others.length} main-floor tables are seated by the host on arrival and can&rsquo;t be reserved online.
             </p>
           </section>

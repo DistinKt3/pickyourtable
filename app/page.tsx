@@ -22,7 +22,7 @@ export default async function Index() {
           >
             <span className="flex flex-col">
               <span className="font-display text-2xl">{v.name}</span>
-              <span className="text-[0.9375rem] text-ink-3">{v.tagline}</span>
+              <span className="text-base text-ink-3">{v.tagline}</span>
             </span>
             <span aria-hidden className="text-ink-3 transition-transform group-hover:translate-x-0.5">
               &rarr;

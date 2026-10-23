@@ -342,7 +342,7 @@ function MobileHint({
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-sheet bg-surface-1 py-3 pr-3 pl-4 shadow-pop">
-        <p className="min-w-0 flex-1 text-[0.9375rem] leading-snug text-ink-2">
+        <p className="min-w-0 flex-1 text-base leading-snug text-ink-2">
           {error ? (
             <span className="text-danger">{error}</span>
           ) : slot && status !== "loading" ? (
@@ -388,7 +388,7 @@ function EmptyPanel({
         Explore the room and tap any highlighted table to see the view from its seat. You pay a table fee to guarantee it.
       </p>
       {error ? (
-        <p className="mt-4 text-[0.9375rem] text-danger">{error}</p>
+        <p className="mt-4 text-base text-danger">{error}</p>
       ) : slot && status !== "loading" ? (
         <p className="mt-4 text-[0.9375rem] font-medium tabular">
           {free === 0 ? "No tables are free" : `${free} tables are free`} at {formatTime(slot.time)}.
@@ -406,7 +406,7 @@ function EmptyPanel({
               <TierDot color={t.color} colorDark={t.colorDark} className="mt-2" />
               <div className="min-w-0 flex-1">
                 <p className="font-display text-[1.375rem] leading-tight">{t.name}</p>
-                <p className="mt-0.5 text-[0.9375rem] text-ink-2">{t.description}</p>
+                <p className="mt-0.5 text-base text-ink-2">{t.description}</p>
               </div>
               {Number.isFinite(from) ? (
                 <p className="shrink-0 pt-1 text-[0.9375rem] text-ink-2 tabular">from {formatMoney(from)}</p>

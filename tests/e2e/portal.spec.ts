@@ -1,5 +1,6 @@
+import { AxeBuilder } from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
-import { addDays, formatTimeLabel, nextWeekday, pickSlot, query, tapTable } from "./helpers";
+import { addDays, expectBodyText16, formatTimeLabel, nextWeekday, pickSlot, query, tapTable } from "./helpers";
 
 /**
  * The operator side of the M3 gate: a host signs in through the real magic link (read
@@ -10,6 +11,7 @@ import { addDays, formatTimeLabel, nextWeekday, pickSlot, query, tapTable } from
 
 const TZ = "America/Los_Angeles";
 const HOST = "host@halcyon.example";
+const OWNER = "owner@halcyon.example";
 
 async function signIn(page: Page, email: string) {
   await page.goto("/portal/sign-in");
@@ -75,4 +77,28 @@ test("a guest booking appears on Tonight with a PAID badge within 2 seconds", as
   await expect(row).toContainText("Booked");
   await expect(row.getByRole("button", { name: /^Mark .* seated/ })).toHaveCount(0);
   await expect(row.getByRole("button", { name: /no-show$/ })).toHaveCount(0);
+});
+
+test("every portal screen passes axe (WCAG 2.2 AA) and the 16 px body-text rule", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop");
+  await page.goto("/portal/sign-in");
+  const check = async (label: string) => {
+    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+    const summary = results.violations.map((v) => `${v.id}: ${v.nodes.length} (${v.nodes[0]?.target.join(" ")})`);
+    expect(summary, `${label}: ${summary.join("; ")}`).toEqual([]);
+    await expectBodyText16(page, label);
+  };
+  await check("sign-in");
+  await signIn(page, OWNER);
+  for (const [path, heading] of [
+    ["/portal/tonight", "Tonight"],
+    ["/portal/bookings", "Bookings"],
+    ["/portal/tables", "Tables and pricing"],
+    ["/portal/blackouts", "Blackouts"],
+    ["/portal/review", "Venue review"],
+  ] as const) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(heading);
+    await check(path);
+  }
 });

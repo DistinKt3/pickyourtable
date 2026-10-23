@@ -175,7 +175,7 @@ function DetailsStep({ data, onClose }: { data: RoomData; onClose: () => void })
       <StepHeader title="Your details" />
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
         <HoldSummary data={data} hold={hold} />
-        <p className="mt-3 text-[0.9375rem] text-ink-2">We&rsquo;re holding this table for you while you book.</p>
+        <p className="mt-3 text-base text-ink-2">We&rsquo;re holding this table for you while you book.</p>
         {failure ? (
           <Banner tone="danger" className="mt-4">
             {failure}
@@ -310,7 +310,7 @@ function PayStep({ data }: { data: RoomData }) {
             <SimPay payment={payment} confirming={confirming} onPaid={onPaid} onError={(m) => setPaymentError(m)} />
           )}
         </div>
-        <p className="mt-5 text-sm leading-relaxed text-ink-3">{POLICY(data.venue.booking.fullRefundHours)}</p>
+        <p className="mt-5 text-base leading-relaxed text-ink-3">{POLICY(data.venue.booking.fullRefundHours)}</p>
       </div>
     </div>
   );
@@ -326,7 +326,7 @@ function ConfirmedStep({ data, onClose }: { data: RoomData; onClose: () => void 
       <div className="min-h-0 flex-1 overflow-y-auto pb-5">
         {table?.image ? <SeatViewImage image={table.image} alt={`The view from ${table.label}`} priority /> : null}
         <div className="px-5 pt-5">
-          <p className="inline-flex items-center gap-1.5 text-[0.9375rem] font-medium text-success">
+          <p className="inline-flex items-center gap-1.5 text-base font-medium text-success">
             <Check aria-hidden className="size-4" strokeWidth={2.25} />
             Booked and paid
           </p>
@@ -341,7 +341,7 @@ function ConfirmedStep({ data, onClose }: { data: RoomData; onClose: () => void 
             <dt className="text-ink-3">Table fee</dt>
             <dd>{formatMoney(hold.priceCents)} paid</dd>
           </dl>
-          <p className="mt-4 text-[0.9375rem] text-ink-2">
+          <p className="mt-4 text-base text-ink-2">
             We&rsquo;ve emailed the details and your manage link to {booking.emailedTo}.
           </p>
           <div className="mt-5 flex flex-col gap-2 sm:flex-row">
@@ -389,7 +389,7 @@ function ExpiredStep({ data, onClose, onRehold }: { data: RoomData; onClose: () 
       <StepHeader title="Your hold ended" />
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
         <HoldSummary data={data} hold={hold} timer={false} />
-        <p className="mt-4 text-[0.9375rem] text-ink-2">
+        <p className="mt-4 text-base text-ink-2">
           We released {hold.tableLabel} after {data.venue.booking.holdMinutes} minutes so others could book it. If it&rsquo;s
           still free, you can hold it again.
         </p>

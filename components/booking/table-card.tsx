@@ -176,7 +176,7 @@ export function TableCard({
           </div>
         ) : null}
         {!table.bookable ? (
-          <p className="text-[0.9375rem] text-ink-2">
+          <p className="text-base text-ink-2">
             Main-floor tables are seated by the host on arrival. Choose a highlighted table to guarantee your seat.
           </p>
         ) : !slot ? (
@@ -230,7 +230,7 @@ function CardMedia({ table, onSitHere, priority }: { table: RoomTable; onSitHere
   if (!table.image) {
     return (
       <div className="flex aspect-[3/1] items-end bg-[linear-gradient(180deg,var(--surface-2),var(--surface-3))] px-5 pb-4">
-        <p className="text-[0.9375rem] text-ink-2">No seat view for main-floor tables.</p>
+        <p className="text-base text-ink-2">No seat view for main-floor tables.</p>
       </div>
     );
   }
@@ -283,9 +283,9 @@ function CardDetails({ data, table, fee }: { data: RoomData; table: RoomTable; f
           ))}
         </ul>
       ) : null}
-      <p className="mt-4 hidden text-[0.9375rem] leading-relaxed text-ink-2 lg:block">{tier.description}</p>
+      <p className="mt-4 hidden text-base leading-relaxed text-ink-2 lg:block">{tier.description}</p>
       {table.bookable ? (
-        <p className="mt-2 hidden text-sm leading-relaxed text-ink-3 lg:block">
+        <p className="mt-2 hidden text-base leading-relaxed text-ink-3 lg:block">
           The table fee guarantees this exact table. It&rsquo;s charged now and is separate from your bill.
         </p>
       ) : null}
@@ -328,16 +328,16 @@ function StateHelp({ data, table, onPickSlot }: { data: RoomData; table: RoomTab
   return (
     <div className="mt-4 flex flex-col gap-3">
       {state === "taken" ? (
-        <p className="text-[0.9375rem] text-ink-2">
+        <p className="text-base text-ink-2">
           {table.label} is taken at {formatTime(slot.time)}.
         </p>
       ) : null}
       {state === "wrong_size" ? (
-        <p className="text-[0.9375rem] text-ink-2">{a?.reason ?? `${stateText(table, a)}. Your party is ${slot.party}.`}</p>
+        <p className="text-base text-ink-2">{a?.reason ?? `${stateText(table, a)}. Your party is ${slot.party}.`}</p>
       ) : null}
       {nearest.length ? (
         <div>
-          <p className="text-[0.9375rem] text-ink-2">
+          <p className="text-base text-ink-2">
             No {tier.name.toLowerCase()} table is free at {formatTime(slot.time)}. Nearest times with one free:
           </p>
           <TimeChips
@@ -349,7 +349,7 @@ function StateHelp({ data, table, onPickSlot }: { data: RoomData; table: RoomTab
       {times ? (
         times.length ? (
           <div>
-            <p className="text-[0.9375rem] text-ink-2">Next free times for {table.label}:</p>
+            <p className="text-base text-ink-2">Next free times for {table.label}:</p>
             <TimeChips
               times={times.map((t) => ({
                 key: `${t.date} ${t.time}`,
@@ -362,7 +362,7 @@ function StateHelp({ data, table, onPickSlot }: { data: RoomData; table: RoomTab
             />
           </div>
         ) : (
-          <p className="text-[0.9375rem] text-ink-2">No free times for {table.label} in the next few weeks.</p>
+          <p className="text-base text-ink-2">No free times for {table.label} in the next few weeks.</p>
         )
       ) : (
         <button
@@ -374,7 +374,7 @@ function StateHelp({ data, table, onPickSlot }: { data: RoomData; table: RoomTab
           {loading ? "Finding times" : "Find other times for this table"}
         </button>
       )}
-      {timesError ? <p className="text-sm text-danger">{timesError}</p> : null}
+      {timesError ? <p className="text-base text-danger">{timesError}</p> : null}
       {state === "wrong_size" ? null : (
         <button type="button" className="sr-only" onClick={onPickSlot}>
           Change date, time or party

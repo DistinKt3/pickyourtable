@@ -130,7 +130,7 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
                     <span className="block text-[0.9375rem] font-medium text-ink-2">
                       {dt === "weekend" ? "Weekend" : "Weeknight"}
                     </span>
-                    <span className="block text-sm text-ink-3">
+                    <span data-meta className="block text-sm text-ink-3">
                       {describeDays(daysFor(d.days, weekendDays, dt)) || "No days"}
                     </span>
                   </th>
@@ -207,7 +207,7 @@ export function FeesTab({ initial, weekendDays, today }: { initial: PricingRespo
                 <li key={date} className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
                   <div className="min-w-0">
                     <p className="text-lg font-semibold text-ink tabular">{formatDate(date, { weekday: "long", year: true })}</p>
-                    <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[0.9375rem] text-ink-2 tabular">
+                    <p data-meta className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[0.9375rem] text-ink-2 tabular">
                       {list
                         .sort((a, b) => a.tier.localeCompare(b.tier) || a.daypart.localeCompare(b.daypart))
                         .map((r) => (

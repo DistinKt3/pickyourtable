@@ -133,7 +133,7 @@ export function BookingRow({
             </Badge>
           </div>
           {occasion || r.note ? (
-            <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[0.9375rem] text-ink-2">
+            <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-base text-ink-2">
               {occasion ? (
                 <span className="inline-flex h-7 items-center rounded-full bg-surface-2 px-2.5 text-sm font-medium text-ink-2">
                   {occasion}
@@ -181,7 +181,7 @@ export function BookingRow({
       )}
 
       {error ? (
-        <p role="alert" className="col-span-2 mt-2 text-[0.9375rem] font-medium text-danger">
+        <p role="alert" className="col-span-2 mt-2 text-base font-medium text-danger">
           {error}
         </p>
       ) : null}

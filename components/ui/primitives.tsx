@@ -64,7 +64,8 @@ export function Segmented<T extends string>({
               value={o.value}
               checked={active}
               onChange={() => onChange(o.value)}
-              className="peer absolute inset-0 cursor-pointer opacity-0"
+              // The pill is 36 px; the hit area spans the control's full 44 px.
+              className="peer absolute inset-x-0 -inset-y-1 cursor-pointer opacity-0"
             />
             <span
               className={cx(
@@ -185,8 +186,8 @@ export function Banner({
       className={cx("flex items-start gap-3 rounded-card px-4 py-3", tones[tone], className)}
     >
       <div className="min-w-0 flex-1">
-        {title ? <p className="font-semibold text-[0.9375rem] text-current">{title}</p> : null}
-        {children ? <div className={cx("text-[0.9375rem]", title ? "mt-0.5 opacity-90" : "")}>{children}</div> : null}
+        {title ? <p className="font-semibold text-base text-current">{title}</p> : null}
+        {children ? <div className={cx("text-base", title ? "mt-0.5 opacity-90" : "")}>{children}</div> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>

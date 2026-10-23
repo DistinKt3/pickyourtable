@@ -21,9 +21,10 @@ export function DateSwitcher({ date, today, onChange }: { date: string; today: s
             type="button"
             className="min-h-11 min-w-[8.5rem] rounded-full px-3 text-base font-medium text-ink tabular transition-colors hover:bg-surface-2"
             onClick={() => input.current?.showPicker?.()}
-            aria-label={`Date: ${formatDate(date, { weekday: "long" })}. Choose another date`}
           >
             {label}
+            {/* The name starts with the visible text (WCAG 2.5.3), then says what it does. */}
+            <span className="sr-only">, choose another date</span>
           </button>
           <input
             ref={input}

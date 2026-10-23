@@ -40,9 +40,7 @@ export function SeatViewImage({
     >
       {failed ? (
         <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(180deg,var(--surface-2),var(--surface-3))]">
-          {showTag ? (
-            <p className="px-6 text-center text-[0.9375rem] text-ink-3">The view from this seat is on its way.</p>
-          ) : null}
+          {showTag ? <p className="px-6 text-center text-base text-ink-3">The view from this seat is on its way.</p> : null}
         </div>
       ) : (
         <picture>

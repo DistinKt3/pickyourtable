@@ -1,6 +1,6 @@
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
-import { formatTimeLabel, nextWeekday, pickSlot } from "./helpers";
+import { addDays, expectBodyText16, formatTimeLabel, nextWeekday, pickSlot } from "./helpers";
 
 /**
  * PRD G-10: with WebGL off the whole flow completes, and axe reports zero WCAG 2.2 AA
@@ -19,6 +19,7 @@ async function axe(page: Page, label: string) {
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const summary = results.violations.map((v) => `${v.id}: ${v.nodes.length} (${v.nodes[0]?.target.join(" ")})`);
   expect(summary, `${label}: ${summary.join("; ")}`).toEqual([]);
+  await expectBodyText16(page, label);
 }
 
 test("the whole booking flow works without WebGL and passes axe at every step", async ({ page }, info) => {
@@ -30,8 +31,9 @@ test("the whole booking flow works without WebGL and passes axe at every step", 
   await page.getByRole("radio", { name: "List" }).check({ force: true });
   await axe(page, "list");
 
-  // A Tuesday, so the slot is a weeknight.
-  const date = nextWeekday(2, 2);
+  // A Tuesday, so the slot is a weeknight; each project and repeat has its own, two weeks
+  // apart, so runs never hold the same table (guest-states books the Tuesday in between).
+  const date = addDays(nextWeekday(2, 2), 14 * (2 * info.repeatEachIndex + (info.project.name === "phone" ? 0 : 1)));
   await pickSlot(page, date, formatTimeLabel("19:00"), 2);
   await axe(page, "list with availability");
 
