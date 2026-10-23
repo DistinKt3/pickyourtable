@@ -63,6 +63,13 @@ export interface Plan2DProps {
   focus?: { code: string; bottomInset: number } | null;
   reducedMotion?: boolean;
   className?: string;
+  /**
+   * How labels share space. "full-first" (default) gives each label, highest priority
+   * first, its full form when it fits. "compact-first" labels as many tables as possible
+   * in their compact form, then upgrades the ones with room (the portal's Tonight plan,
+   * where every paid table must show).
+   */
+  labelFit?: "full-first" | "compact-first";
 }
 
 export function Plan2D(props: Plan2DProps) {
@@ -92,6 +99,7 @@ function PlanBox({
   onHover,
   focus,
   reducedMotion,
+  labelFit,
   frame,
   variant,
 }: Plan2DProps & { frame: PlanFrame; variant: "landscape" | "portrait" }) {
@@ -136,7 +144,17 @@ function PlanBox({
     return () => ro.disconnect();
   }, []);
 
-  const modes = useLabelModes(boxRef, box, tables, views, selected ?? null, hovered ?? null, frame, namedAreas);
+  const modes = useLabelModes(
+    boxRef,
+    box,
+    tables,
+    views,
+    selected ?? null,
+    hovered ?? null,
+    frame,
+    namedAreas,
+    labelFit ?? "full-first",
+  );
 
   // Keep the focused table visible above the sheet: scale up slightly and pan.
   const { transform, zoom } = useMemo(() => {
@@ -584,8 +602,9 @@ function PlanLabel({
       >
         {view.shortDetail ?? view.short}
       </span>
-      {view.badge && mode !== "hidden" ? (
+      {view.badge ? (
         <span
+          data-badge
           className={cx(
             "inline-flex h-5 items-center rounded-full px-1.5 text-[0.6875rem] leading-none font-semibold whitespace-nowrap tabular",
             view.badgeTone === "success"
@@ -652,6 +671,7 @@ function useLabelModes(
   hovered: string | null,
   frame: PlanFrame,
   areas: { id: string; at: { left: number; top: number } }[],
+  labelFit: "full-first" | "compact-first",
 ): Record<string, LabelMode> {
   const [modes, setModes] = useState<Record<string, LabelMode>>({});
   useEffect(() => {
@@ -693,19 +713,22 @@ function useLabelModes(
         const v = views[t.id]!;
         const p = selected === t.id ? 100 : hovered === t.id ? 50 : v.priority;
         const at = project(frame, { x: t.x, z: t.z });
-        const badge = v.badge ? 22 : 0;
+        // A badge (the portal's "7:30 pm") can be wider than its label; reserve it too.
+        const badge = v.badge ? size(`[data-label="${t.id}"] [data-badge]`) : { w: 0, h: 0 };
+        const extra = v.badge ? badge.h + 2 : 0;
         const full = size(`[data-label="${t.id}"] [data-variant="full"]`);
         const compact = size(`[data-label="${t.id}"] [data-variant="compact"]`);
         return {
           t,
           p,
-          full: rectAt(at.left, at.top, full.w, full.h + badge),
-          compact: rectAt(at.left, at.top, compact.w, compact.h + badge),
+          full: rectAt(at.left, at.top, Math.max(full.w, badge.w), full.h + extra),
+          compact: rectAt(at.left, at.top, Math.max(compact.w, badge.w), compact.h + extra),
         };
       })
       .sort((a, b) => b.p - a.p);
 
-    const small = box.w / frame.viewBox.w < COMPACT_BELOW_PX_PER_M;
+    const compactFirst = labelFit === "compact-first";
+    const small = compactFirst || box.w / frame.viewBox.w < COMPACT_BELOW_PX_PER_M;
     const compactTiers = new Set<string>();
     if (!small) {
       const trial: Rect[] = [];
@@ -739,12 +762,24 @@ function useLabelModes(
         }
       }
     }
+    if (compactFirst) {
+      // Every table first gets its compact label; then, highest priority first, grow
+      // a label to its full form where that touches nobody.
+      for (const o of order) {
+        if (next[o.t.id] !== "compact") continue;
+        const others = placed.filter((q) => q !== o.compact);
+        if (inside(o.full) && !hits(o.full, others)) {
+          placed[placed.indexOf(o.compact)] = o.full;
+          next[o.t.id] = "full";
+        }
+      }
+    }
     for (const a of areas) {
       const s = size(`[data-area="${a.id}"]`);
       const r = rectAt(a.at.left, a.at.top, s.w, s.h);
       next[`area:${a.id}`] = inside(r) && !hits(r, placed) ? "full" : "hidden";
     }
     setModes(next);
-  }, [boxRef, box, tables, views, selected, hovered, frame, areas]);
+  }, [boxRef, box, tables, views, selected, hovered, frame, areas, labelFit]);
   return modes;
 }

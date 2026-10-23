@@ -23,6 +23,7 @@
     "vercel-build": "tsx --conditions=react-server db/migrate.ts && next build",
     "e2e:server": "bash scripts/e2e-server.sh",
     "screens": "SCREENS=1 playwright test tests/e2e/screens.spec.ts --project=desktop",
+    "screens:portal": "tsx --conditions=react-server scripts/screens-portal.ts",
     "secrets": "gitleaks git --redact --no-banner -c .gitleaks.toml .",
     "semgrep": "semgrep scan --config p/typescript --config p/react --config p/nextjs --config p/secrets --config p/owasp-top-ten --error --metrics off --exclude .next --exclude node_modules --exclude public/vendor .",
     "flag": "tsx --conditions=react-server scripts/flag.ts",
