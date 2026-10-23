@@ -23,7 +23,8 @@ import { SEAT_VIEW_SIZE } from "@/lib/venue/media";
 const BASE = process.env.RENDER_BASE_URL ?? "http://localhost:3102";
 const BUDGET_640 = 250 * 1024;
 const VIEWPORT = { width: 1920, height: 1280 };
-const SCALE = 2;
+// 2880 x 1920: 2.25x the largest output, enough supersampling at about half the time of 2x.
+const SCALE = 1.5;
 const SIZES = [
   { width: 640, height: Math.round(640 / SEAT_VIEW_ASPECT) },
   { width: SEAT_VIEW_SIZE.width, height: SEAT_VIEW_SIZE.height },
@@ -40,7 +41,7 @@ async function encode(png: Buffer, dir: string, code: string): Promise<Record<st
     files[name] = { bytes: data.length };
   };
   for (const s of SIZES) {
-    // Lanczos from the 2x capture: the supersampling pass.
+    // Lanczos from the large capture: the supersampling pass.
     const base = sharp(png).resize(s.width, s.height, { fit: "cover", kernel: "lanczos3" });
     const sharpened = s.width <= 640 ? base.clone().sharpen({ sigma: 0.5 }) : base.clone();
     let avifQ = 58;
