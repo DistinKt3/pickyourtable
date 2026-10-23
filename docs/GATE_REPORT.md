@@ -70,7 +70,23 @@ Software GPUs no longer get the 3D room at all. Where a browser would render Web
 
 ## Screens
 
-The room, a chosen slot, a table's card and the list, at 390 x 844 and 1440 x 900, in light and dark. Captured in the 3D room by `pnpm screens` into `docs/gate/screens/` (the last capture's images are added there).
+The room, a chosen slot, a table's card and the list, in the 3D room, captured by `pnpm screens` once every image had painted and the camera had held still. Full size in [`gate/screens/`](gate/screens/).
+
+**iPhone 13 (390 x 844)**
+
+| The room | Friday 8:00 pm for 2 | Window 1 | The list |
+| --- | --- | --- | --- |
+| <img src="gate/screens/iphone-13-light-1-room.jpg" width="180" alt="The room, light"> | <img src="gate/screens/iphone-13-light-2-slot.jpg" width="180" alt="Friday 8:00 pm for 2, light"> | <img src="gate/screens/iphone-13-light-3-card.jpg" width="180" alt="Window 1, light"> | <img src="gate/screens/iphone-13-light-4-list.jpg" width="180" alt="The list, light"> |
+| <img src="gate/screens/iphone-13-dark-1-room.jpg" width="180" alt="The room, dark"> | <img src="gate/screens/iphone-13-dark-2-slot.jpg" width="180" alt="Friday 8:00 pm for 2, dark"> | <img src="gate/screens/iphone-13-dark-3-card.jpg" width="180" alt="Window 1, dark"> | <img src="gate/screens/iphone-13-dark-4-list.jpg" width="180" alt="The list, dark"> |
+
+**Desktop (1440 x 900)**
+
+| The room | Friday 8:00 pm for 2 | Window 1 | The list |
+| --- | --- | --- | --- |
+| <img src="gate/screens/desktop-chrome-light-1-room.jpg" width="220" alt="The room, light"> | <img src="gate/screens/desktop-chrome-light-2-slot.jpg" width="220" alt="Friday 8:00 pm for 2, light"> | <img src="gate/screens/desktop-chrome-light-3-card.jpg" width="220" alt="Window 1, light"> | <img src="gate/screens/desktop-chrome-light-4-list.jpg" width="220" alt="The list, light"> |
+| <img src="gate/screens/desktop-chrome-dark-1-room.jpg" width="220" alt="The room, dark"> | <img src="gate/screens/desktop-chrome-dark-2-slot.jpg" width="220" alt="Friday 8:00 pm for 2, dark"> | <img src="gate/screens/desktop-chrome-dark-3-card.jpg" width="220" alt="Window 1, dark"> | <img src="gate/screens/desktop-chrome-dark-4-list.jpg" width="220" alt="The list, dark"> |
+
+The first pass of this set caught the selected table hidden under the phone's card in the 3D room; the camera now frames it above the card (see "What was fixed").
 
 ## Open visual notes
 
@@ -104,6 +120,7 @@ The tests and reviews behind this gate found real defects. Each was fixed and no
   - manage tokens could appear in log paths
 
   Details in [`SECURITY.md`](SECURITY.md).
+- **The card hid the table it described.** In the 3D room on a phone, the camera kept a selected table out of the bottom 45% of the screen, but the card covers about 70%, so Window 1 sat just under its edge. The camera now frames the table above the card's measured height. Proof: `keeps the table and its neighbors above a tall card`, and the screens above.
 - **One frame from the wrong place.** When the camera cut to the seat, the lens changed at once but the position only reached the camera on the next update, so one frame showed the seat's wide lens from high above the room. The reduced-motion test now fails on any in-between frame, and the camera writes position and lens together.
 - **3D on machines without a GPU.** A software-rendered 3D room held the page for seconds per frame. Those browsers now keep the 2D plan.
 - **Test isolation.** A fee left by one test file changed another file's prices on one weekday, which turned CI red on Fridays. Reproduced with a fixed shuffle seed and fixed; the suite now passes in shuffled file orders.
