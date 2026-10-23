@@ -21,8 +21,9 @@ export TRUST_PROXY=xff
 export RATE_LIMIT_SCALE="${RATE_LIMIT_SCALE:-5}"
 for k in STRIPE_SECRET_KEY STRIPE_PUBLISHABLE_KEY STRIPE_WEBHOOK_SECRET STRIPE_CONNECTED_ACCOUNT_ID POSTMARK_SERVER_TOKEN; do unset "$k"; done
 
-docker exec pickyourtable-db-1 psql -U pyt -d pyt -qc "DROP DATABASE IF EXISTS ${E2E_DB} WITH (FORCE)"
-docker exec pickyourtable-db-1 psql -U pyt -d pyt -qc "CREATE DATABASE ${E2E_DB}"
+# Through compose, so it works whatever the checkout's folder is called.
+docker compose exec -T db psql -U pyt -d pyt -qc "DROP DATABASE IF EXISTS ${E2E_DB} WITH (FORCE)"
+docker compose exec -T db psql -U pyt -d pyt -qc "CREATE DATABASE ${E2E_DB}"
 npx tsx --conditions=react-server db/migrate.ts
 npx tsx --conditions=react-server db/seed.ts --reset
 
