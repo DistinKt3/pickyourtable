@@ -498,7 +498,7 @@ function TableGlyph({
             <rect x={-0.19} y={0.12} width={0.38} height={0.09} rx={0.045} fill={furnitureLine} opacity={0.55} />
           </g>
         ))}
-        <g transform={shape.transform}>
+        <g transform={shape.transform} data-top>
           {shape.booth ? (
             <>
               <path d={shape.booth.bench} fill={furniture} stroke={furnitureLine} strokeWidth={0.02} />

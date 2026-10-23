@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/primitives";
@@ -10,7 +11,6 @@ import { type RoomData, type RoomTable, visualState } from "@/lib/room/types";
 import { useRoom } from "@/lib/room/store";
 import { ApiFailure, api, suggestionFrom } from "./api";
 import { loadSavedHold, saveHold, slotKey, useBooking } from "./booking-store";
-import { Flow } from "./flow";
 import { WidgetHeader } from "./header";
 import { useAvailability, useIsDesktop, useReducedMotion } from "./hooks";
 import { ListView } from "./list-view";
@@ -19,6 +19,12 @@ import { RoomView } from "./room-view";
 import { SlotPicker } from "./slot-picker";
 import { TableCard } from "./table-card";
 import { turnstileToken } from "./turnstile";
+
+// Hold, details and payment load on first use, keeping them out of the first page load.
+const Flow = dynamic(() => import("./flow").then((m) => m.Flow), {
+  ssr: false,
+  loading: () => <div className="m-5 h-64 animate-pulse rounded-card bg-surface-2" aria-busy />,
+});
 
 export interface GuestWidgetProps {
   data: RoomData;
@@ -53,6 +59,12 @@ export function GuestWidget({ data, today, turnstileSiteKey, turnstileMode, embe
   const { status: availabilityStatus, error: availabilityError } = useAvailability(venue.id);
 
   useEffect(() => setReducedMotion(reduced), [reduced, setReducedMotion]);
+
+  // The 2D plan is interactive once the widget has hydrated (PRD G-1 budget).
+  useEffect(() => {
+    performance.mark("pyt:interactive");
+    useRoom.getState().setRenderer("2d");
+  }, []);
 
   const largestParty = useMemo(() => Math.max(1, ...data.tables.filter((t) => t.bookable).map((t) => t.maxParty)), [data.tables]);
   const table = data.tables.find((t) => t.id === selected) ?? null;
