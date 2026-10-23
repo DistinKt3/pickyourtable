@@ -78,3 +78,4 @@ Implementation choices the PRD leaves open, each with a one-line reason. Product
 | Seat renders capture at 2880 x 1920 (2.25x the largest output) and must be 250 KB or less per file | Supersampled edges for the hero image within the image budget. |
 | The render route (`/render/[venue]/[table]`) exists only in development or with `PYT_RENDER_ROUTE=1` | It is a build tool, not a page. |
 | The model loaders (GLTF, meshopt, KTX2) are a separate chunk, loaded only when a venue ships `model.glb` | Venues built from `venue.json` never download them. |
+| Browser tests for booking, the portal and timings run with WebGL off; the 3D room has its own test projects on a software GPU | A trace showed the software GPU blocking the page for about 5 s per frame, which would make every timing about the test machine. The 3D projects assert outcomes (positions, framing, accessibility, a cut), not frame rates; frame rate is measured on real phones. |
