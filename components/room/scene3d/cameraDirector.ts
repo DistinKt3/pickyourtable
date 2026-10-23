@@ -50,6 +50,8 @@ export class CameraDirector {
   private ctx: DirectorContext | null = null;
   private move: Move | null = null;
   private screenY = 0;
+  /** False until the first pose is applied: before that the camera is R3F's placeholder. */
+  private placed = false;
   private readonly tmp = new THREE.Vector3();
 
   attach(ctx: DirectorContext): void {
@@ -131,7 +133,8 @@ export class CameraDirector {
       const t = venue.tables.find((x) => x.id === i.code);
       if (t) {
         const now = this.current();
-        const fromSeat = rt.sit > 0.5;
+        // From a seat or before the first pose, frame from the default bearing and pitch.
+        const fromSeat = rt.sit > 0.5 || !this.placed;
         const d = defaultPose(venue, aspect);
         const b = fromSeat ? d.bearing : bearingOf(now.position, now.target);
         const p = fromSeat ? d.pitch : pitchOf(now.position, now.target);
@@ -151,6 +154,7 @@ export class CameraDirector {
       this.move = null;
       this.constrain(sitTo === 0);
       this.apply(to, sitTo);
+      this.placed = true;
       ctx.controls.enabled = sitTo === 0;
       ctx.rt.invalidate();
       return;
