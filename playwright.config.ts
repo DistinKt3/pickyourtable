@@ -29,6 +29,8 @@ export default defineConfig({
     baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
+    // E2E_VIDEO=1 records every test (the demo recording in the gate report).
+    video: process.env.E2E_VIDEO ? "on" : "off",
   },
   // The booking, portal and timing specs run with WebGL off: the 3D room renders on a
   // software GPU here, and its multi-second frames would make every timing about this

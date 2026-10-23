@@ -9,7 +9,7 @@ import { formatTimeLabel, nextFriday, pickSlot, tapTable } from "./helpers";
  */
 test.skip(!process.env.SCREENS, "set SCREENS=1 to capture the matrix");
 
-const DEVICES = [
+const ALL_DEVICES = [
   { name: "iphone-13", width: 390, height: 844, scale: 3, mobile: true },
   { name: "iphone-16-pro", width: 402, height: 874, scale: 3, mobile: true },
   { name: "pixel-6a", width: 412, height: 915, scale: 2.625, mobile: true },
@@ -17,12 +17,16 @@ const DEVICES = [
   { name: "ipad", width: 820, height: 1180, scale: 2, mobile: true },
   { name: "desktop-chrome", width: 1440, height: 900, scale: 1, mobile: false },
 ] as const;
+// SCREENS=all captures every device; otherwise the PRD's two sizes (390 x 844, 1440 x 900).
+const DEVICES =
+  process.env.SCREENS === "all" ? ALL_DEVICES : ALL_DEVICES.filter((d) => d.name === "iphone-13" || d.name === "desktop-chrome");
 
 const OUT = "tests/screens/__output__/matrix";
 
 test("capture the device matrix", async ({ browser }, info) => {
   test.skip(info.project.name !== "desktop-3d", "one pass is enough");
-  test.setTimeout(900_000);
+  // 48 captures of the 3D room on a software GPU, at up to 3x pixel density.
+  test.setTimeout(3_600_000);
   mkdirSync(OUT, { recursive: true });
   const friday = nextFriday();
   for (const d of DEVICES) {
@@ -57,7 +61,7 @@ test("capture the device matrix", async ({ browser }, info) => {
 async function waitFor3d(page: Page) {
   await page
     .waitForFunction(() => (window as unknown as { __pytScene?: { ready: boolean } }).__pytScene?.ready === true, null, {
-      timeout: 30_000,
+      timeout: 120_000,
     })
     .catch(() => undefined);
 }

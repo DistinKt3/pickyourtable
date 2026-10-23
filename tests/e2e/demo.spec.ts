@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { addDays, formatTimeLabel, nextFriday, pickSlot, query, tapTable } from "./helpers";
+import { formatTimeLabel, nextFriday, pickSlot, query, tapTable } from "./helpers";
 
 /**
  * The PRD demo script (M2 gate): open Halcyon on a phone, pick Friday 8:00 pm for 2,
@@ -8,9 +8,14 @@ import { addDays, formatTimeLabel, nextFriday, pickSlot, query, tapTable } from 
  */
 test("demo script runs end to end in under 90 seconds", async ({ page }, info) => {
   const started = Date.now();
-  // Each project and repeat books its own Friday, so runs never compete for Window 1.
-  const lane = ["phone", "desktop", "phone-3d", "desktop-3d"].indexOf(info.project.name);
-  const friday = addDays(nextFriday(), 7 * (4 * info.repeatEachIndex + lane));
+  // The script's Friday. Runs are serial, and each starts by clearing that slot at Window 1
+  // (only demo runs book it), so every project and repeat can run the script as written.
+  const friday = nextFriday();
+  await query(
+    `delete from reservation where table_id = (select id from venue_table where venue_id = 'halcyon' and code = 'W1')
+       and starts_at = ($1 || ' 20:00')::timestamp at time zone 'America/Los_Angeles'`,
+    [friday],
+  );
   // In the 3D projects the script runs in the 3D room. This machine has no GPU, so the
   // room is forced on and every wait allows for software rendering.
   const room3d = info.project.name.endsWith("-3d");
