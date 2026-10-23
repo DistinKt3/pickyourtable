@@ -1,0 +1,17 @@
+title = "Pick-Your-Table secret scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Build output and named test-only fixtures (no real secrets)"
+paths = ['''^\.next/''', '''^node_modules/''', '''^test-results/''', '''^playwright-report/''', '''^tests/screens/__output__/''']
+regexes = [
+  '''e2e-cron-secret-0123456789''',
+  '''e2e-secret-e2e-secret-e2e-secret-0123456789''',
+  '''test-secret-test-secret-test-secret-0123456789''',
+  '''ci-only-secret-ci-only-secret-ci-only-secret''',
+  '''1x0000000000000000000000000000000AA''',
+  '''1x00000000000000000000AA''',
+  '''sk_test_placeholder''',
+]

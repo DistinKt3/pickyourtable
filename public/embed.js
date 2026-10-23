@@ -71,7 +71,7 @@
     o.zIndex = "2147483000";
     o.background = "#f6f3ee";
     var frame = document.createElement("iframe");
-    frame.src = origin + "/v/" + venue + "?embed=1";
+    frame.src = origin + "/v/" + venue + "?embed=1&parent=" + encodeURIComponent(window.location.origin);
     frame.title = label;
     frame.setAttribute("allow", "payment");
     var f = frame.style;

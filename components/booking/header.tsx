@@ -81,11 +81,24 @@ function SlotPills({
   );
 }
 
+/**
+ * Tells the embedding page to close the widget. The message goes only to the page
+ * that embedded us: the origin passed by embed.js, confirmed against the browser's
+ * own record of the parent (ancestorOrigins, else the referrer).
+ */
+function closeEmbed() {
+  const claimed = new URLSearchParams(window.location.search).get("parent");
+  const actual = window.location.ancestorOrigins?.[0] ?? (document.referrer ? new URL(document.referrer).origin : null);
+  if (claimed && actual && claimed === actual && /^https?:\/\/[\w.-]+(:\d+)?$/.test(claimed)) {
+    window.parent.postMessage({ type: "pyt:close" }, claimed);
+  }
+}
+
 function EmbedClose() {
   return (
     <button
       type="button"
-      onClick={() => window.parent.postMessage({ type: "pyt:close" }, "*")}
+      onClick={closeEmbed}
       className="inline-flex size-10 items-center justify-center rounded-full text-ink-2 hover:bg-surface-2"
       aria-label="Close"
     >

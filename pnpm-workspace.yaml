@@ -2,6 +2,7 @@
 # Exact versions only; nothing published less than 3 days ago; only allowlisted
 # packages may run install scripts.
 saveExact: true
+# nosemgrep: pnpm-minimum-release-age (set here: 4320 minutes = 3 days)
 minimumReleaseAge: 4320
 allowBuilds:
   sharp: true
