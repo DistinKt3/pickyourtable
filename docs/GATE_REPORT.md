@@ -1,6 +1,6 @@
 # Build gate report
 
-**Date:** 2026-10-23. **Build:** branch `claude/vigilant-darwin-1zs4u4`. **Environment:** a cloud Linux container with 4 vCPUs. Chromium runs headless with SwiftShader, a software GPU, and the database is Postgres 18.6 in Docker. Payments use the local Stripe simulator (`PAYMENTS_MODE=sim`), email uses the dev mail store, and Turnstile uses Cloudflare's documented test keys. There is no deployment.
+**Date:** 2026-10-23. **Build:** branch `main`. **Environment:** a cloud Linux container with 4 vCPUs. Chromium runs headless with SwiftShader, a software GPU, and the database is Postgres 18.6 in Docker. Payments use the local Stripe simulator (`PAYMENTS_MODE=sim`), email uses the dev mail store, and Turnstile uses Cloudflare's documented test keys. There is no deployment.
 
 **Recommendation: invest further.** Every check that can run here passes, each with its proof. The gate is not complete until four more things run: the device matrix with on-device frame rate, the demo on a real phone, usability with five people, and an outside design review. Money reconciliation also needs one run in Stripe test mode. Stop if on-device frame rate or usability fails.
 
