@@ -233,3 +233,22 @@
     transform: none;
   }
 }
+
+/* The 2D plan renders both orientations; the container shows the one that fits. */
+.plan-root {
+  container: plan / size;
+}
+.plan-landscape {
+  display: flex;
+}
+.plan-portrait {
+  display: none;
+}
+@container plan (aspect-ratio < 4 / 5) {
+  .plan-landscape {
+    display: none;
+  }
+  .plan-portrait {
+    display: flex;
+  }
+}

@@ -58,6 +58,12 @@
       "rules": {
         "react/no-unknown-property": "off"
       }
+    },
+    {
+      "files": ["components/room/plan2d/**"],
+      "rules": {
+        "jsx-a11y/prefer-tag-over-role": "off"
+      }
     }
   ],
   "ignorePatterns": [
