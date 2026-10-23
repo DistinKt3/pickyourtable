@@ -63,6 +63,13 @@ export interface Plan2DProps {
   focus?: { code: string; bottomInset: number } | null;
   reducedMotion?: boolean;
   className?: string;
+  /**
+   * How labels share space. "full-first" (default) gives each label, highest priority
+   * first, its full form when it fits. "compact-first" labels as many tables as possible
+   * in their compact form, then upgrades the ones with room (the portal's Tonight plan,
+   * where every paid table must show).
+   */
+  labelFit?: "full-first" | "compact-first";
 }
 
 export function Plan2D(props: Plan2DProps) {
@@ -92,6 +99,7 @@ function PlanBox({
   onHover,
   focus,
   reducedMotion,
+  labelFit,
   frame,
   variant,
 }: Plan2DProps & { frame: PlanFrame; variant: "landscape" | "portrait" }) {
@@ -126,7 +134,7 @@ function PlanBox({
     return () => ro.disconnect();
   }, []);
 
-  const modes = useLabelModes(boxRef, box, tables, views, selected ?? null, hovered ?? null, frame);
+  const modes = useLabelModes(boxRef, box, tables, views, selected ?? null, hovered ?? null, frame, labelFit ?? "full-first");
 
   // Keep the focused table visible above the sheet: scale up slightly and pan.
   const transform = useMemo(() => {
@@ -551,8 +559,9 @@ function PlanLabel({
           <span>{view.shortDetail ?? view.short}</span>
         </span>
       </span>
-      {view.badge && mode !== "hidden" ? (
+      {view.badge ? (
         <span
+          data-badge
           className={cx(
             "inline-flex h-5 items-center rounded-full px-1.5 text-[0.6875rem] leading-none font-semibold whitespace-nowrap tabular",
             view.badgeTone === "success"
@@ -601,7 +610,8 @@ function Compass({ bearing }: { bearing: number }) {
 
 /**
  * Collision pass: highest priority first, each label takes its full form if it fits,
- * else its compact form, else hides. Runs on resize and when states change.
+ * else its compact form, else hides ("compact-first" places compact forms first and
+ * then upgrades). Runs on resize and when states change.
  */
 function useLabelModes(
   boxRef: React.RefObject<HTMLDivElement | null>,
@@ -611,6 +621,7 @@ function useLabelModes(
   selected: string | null,
   hovered: string | null,
   frame: PlanFrame,
+  labelFit: "full-first" | "compact-first",
 ): Record<string, LabelMode> {
   const [modes, setModes] = useState<Record<string, LabelMode>>({});
   useEffect(() => {
@@ -640,38 +651,60 @@ function useLabelModes(
         return { t, v, p };
       })
       .sort((a, b) => b.p - a.p);
-    const placed: { x1: number; y1: number; x2: number; y2: number }[] = [];
+    type Rect = { x1: number; y1: number; x2: number; y2: number };
+    const placed: Rect[] = [];
     const next: Record<string, LabelMode> = {};
     const H = 24;
     const GAP = 4;
+    const hits = (r: Rect, others: Rect[]) => others.some((q) => r.x1 < q.x2 && r.x2 > q.x1 && r.y1 < q.y2 && r.y2 > q.y1);
+    const rectFor = (t: VenueTable, v: PlanTableView, variant: "full" | "compact"): Rect | null => {
+      const at = project(frame, { x: t.x, z: t.z });
+      const centerX = (at.left / 100) * box.w;
+      const centerY = (at.top / 100) * box.h;
+      // A badge (the portal's "Paid 7:30") can be wider than its label; reserve its width too.
+      const badgeW = v.badge ? (el.querySelector<HTMLElement>(`[data-label="${t.id}"] [data-badge]`)?.offsetWidth ?? 0) : 0;
+      const w = Math.max(measure(t.id, variant), badgeW);
+      const height = v.badge ? H + 22 : H;
+      const r = {
+        x1: centerX - w / 2 - GAP,
+        y1: centerY - H / 2 - GAP,
+        x2: centerX + w / 2 + GAP,
+        y2: centerY - H / 2 + height + GAP,
+      };
+      return r.x1 < -8 || r.x2 > box.w + 8 ? null : r;
+    };
+    const variants = labelFit === "compact-first" ? (["compact"] as const) : (["full", "compact"] as const);
+    const kept: { t: VenueTable; v: PlanTableView; r: Rect }[] = [];
     for (const { t, v, p } of order) {
       if (p <= 0) {
         next[t.id] = "hidden";
         continue;
       }
-      const at = project(frame, { x: t.x, z: t.z });
-      const centerX = (at.left / 100) * box.w;
-      const centerY = (at.top / 100) * box.h;
       let chosen: LabelMode = "hidden";
-      for (const variant of ["full", "compact"] as const) {
-        const w = measure(t.id, variant);
-        const height = v.badge ? H + 22 : H;
-        const r = {
-          x1: centerX - w / 2 - GAP,
-          y1: centerY - H / 2 - GAP,
-          x2: centerX + w / 2 + GAP,
-          y2: centerY - H / 2 + height + GAP,
-        };
-        const offscreen = r.x1 < -8 || r.x2 > box.w + 8;
-        if (!offscreen && !placed.some((q) => r.x1 < q.x2 && r.x2 > q.x1 && r.y1 < q.y2 && r.y2 > q.y1)) {
+      for (const variant of variants) {
+        const r = rectFor(t, v, variant);
+        if (r && !hits(r, placed)) {
           placed.push(r);
+          kept.push({ t, v, r });
           chosen = variant;
           break;
         }
       }
       next[t.id] = chosen;
     }
+    if (labelFit === "compact-first") {
+      // Second pass, highest priority first: grow a label to its full form where that touches nobody.
+      for (const k of kept) {
+        const full = rectFor(k.t, k.v, "full");
+        if (!full) continue;
+        const others = placed.filter((q) => q !== k.r);
+        if (hits(full, others)) continue;
+        placed[placed.indexOf(k.r)] = full;
+        k.r = full;
+        next[k.t.id] = "full";
+      }
+    }
     setModes(next);
-  }, [boxRef, box, tables, views, selected, hovered, frame]);
+  }, [boxRef, box, tables, views, selected, hovered, frame, labelFit]);
   return modes;
 }

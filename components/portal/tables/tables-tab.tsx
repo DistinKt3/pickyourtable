@@ -76,7 +76,7 @@ export function TablesTab({ initial, pricedTiers }: { initial: TablesResponse; p
                 return (
                   <li
                     key={t.code}
-                    className="grid grid-cols-1 gap-x-6 gap-y-2 px-5 py-3.5 md:grid-cols-[9.5rem_minmax(0,1fr)_auto] md:items-center"
+                    className="grid grid-cols-1 items-center gap-x-6 gap-y-1 px-5 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto] xl:grid-cols-[9.5rem_minmax(0,1fr)_auto]"
                   >
                     <div className="min-w-0">
                       <p className="leading-tight text-ink">
@@ -90,14 +90,14 @@ export function TablesTab({ initial, pricedTiers }: { initial: TablesResponse; p
                       type="button"
                       onClick={() => setEditing(t)}
                       aria-label={`Attributes for ${t.label}: ${t.attributes.join(", ") || "none"}. Edit`}
-                      className="group -mx-2 flex min-h-11 min-w-0 items-center gap-2 rounded-control px-2 text-left transition-colors hover:bg-surface-2"
+                      className="group -mx-2 flex min-h-11 min-w-0 items-center gap-2 justify-self-start rounded-control px-2 text-left transition-colors hover:bg-surface-2 sm:col-span-2 sm:row-start-2 xl:col-span-1 xl:col-start-2 xl:row-start-1"
                     >
                       <span className={cx("min-w-0 text-[0.9375rem]", t.attributes.length ? "text-ink-2" : "text-ink-3")}>
                         {t.attributes.length ? t.attributes.map(capitalize).join(" · ") : "No attributes"}
                       </span>
                       <Pencil aria-hidden className="size-4 shrink-0 text-ink-3 group-hover:text-ink" />
                     </button>
-                    <div className="flex flex-wrap items-center gap-4 md:justify-end">
+                    <div className="flex flex-wrap items-center gap-4 sm:col-start-2 sm:row-start-1 sm:justify-end xl:col-start-3">
                       <label className="relative">
                         <span className="sr-only">Tier for {t.label}</span>
                         <select
@@ -143,7 +143,10 @@ export function TablesTab({ initial, pricedTiers }: { initial: TablesResponse; p
                     {s?.error || s?.saving || s?.saved ? (
                       <p
                         role={s.error ? "alert" : "status"}
-                        className={cx("text-[0.9375rem] md:col-span-3", s.error ? "font-medium text-danger" : "text-ink-3")}
+                        className={cx(
+                          "text-[0.9375rem] sm:col-span-2 xl:col-span-3",
+                          s.error ? "font-medium text-danger" : "text-ink-3",
+                        )}
                       >
                         {s.error ?? (s.saving ? "Saving" : "Saved. New holds use this right away.")}
                       </p>

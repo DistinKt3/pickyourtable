@@ -200,6 +200,14 @@ async function main() {
       timezoneId: tz,
     });
     await ctx.clock.setFixedTime(NOW);
+    // Report page errors (hydration, runtime) so the review catches them, not just the pixels.
+    ctx.on("page", (page) => {
+      page.on("pageerror", (e) => console.error(`page error on ${page.url()}: ${e.message.split("\n")[0]}`));
+      page.on("console", (m) => {
+        if (m.type() === "error" && !/Failed to load resource/.test(m.text()))
+          console.error(`console error on ${page.url()}: ${m.text().split("\n")[0]}`);
+      });
+    });
     // Tonight and Bookings come from the booking service; while it answers 501, serve the seeded rows.
     await ctx.route(/\/api\/portal\/tonight(\?|$)/, async (route) => {
       const res = await route.fetch();

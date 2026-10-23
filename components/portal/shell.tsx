@@ -50,7 +50,7 @@ export function PortalShell({ venueName, demo, operatorName, roleLabel, isOwner,
   return (
     <div
       style={accent}
-      className="min-h-dvh bg-surface-0 text-ink md:grid md:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[15.5rem_minmax(0,1fr)]"
+      className="min-h-dvh bg-surface-0 text-ink md:grid md:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[15.5rem_minmax(0,1fr)] print:block print:min-h-0 print:bg-white print:text-black"
     >
       <a
         href="#main"

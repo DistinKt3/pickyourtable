@@ -134,7 +134,8 @@ export function planViews(tables: RoomTable[], data: TonightResponse | null, now
     const next = list
       .filter((r) => r.table === t.id && r.status === "confirmed" && new Date(r.slot.endsAt).getTime() > now.getTime())
       .sort((a, b) => a.slot.startsAt.localeCompare(b.slot.startsAt))[0];
-    const base = { label: t.label, short, shortDetail: short, ring: "none" as const, faded: false, muted: true, detail: null };
+    // The plan names tables by the code a host says ("W2"); the list beside it has the full names.
+    const base = { label: short, short, shortDetail: short, ring: "none" as const, faded: false, muted: true, detail: null };
 
     if (state === "blocked") {
       out[t.id] = { ...base, ring: "hatched", detail: "Blocked", ariaLabel: `${t.label}, blocked`, priority: 2 };
@@ -146,8 +147,8 @@ export function planViews(tables: RoomTable[], data: TonightResponse | null, now
         ...base,
         ring: "solid",
         muted: false,
-        detail: "Seated",
-        badge: `Seated · ${surname(seatedHere.guestName)}`,
+        detail: surname(seatedHere.guestName),
+        badge: "Seated",
         badgeTone: "success",
         ariaLabel: `${t.label}, seated, ${seatedHere.guestName}, party of ${seatedHere.partySize}${later}`,
         priority: 3,
@@ -160,8 +161,9 @@ export function planViews(tables: RoomTable[], data: TonightResponse | null, now
         ...base,
         ring: "bold",
         muted: false,
-        detail: "Paid",
-        badge: `${clock(next.slot.time)} ${surname(next.guestName)}`,
+        detail: surname(next.guestName),
+        // Just the time: badges must fit side by side on a tablet plan. The fill says paid or late.
+        badge: clock(next.slot.time),
         badgeTone: late ? "warning" : "accent",
         ariaLabel: `${t.label}, paid, ${next.guestName} at ${formatTime(next.slot.time)}, party of ${next.partySize}${late ? ", late" : ""}`,
         priority: late ? 5 : 4,

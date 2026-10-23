@@ -143,7 +143,7 @@ export function BookingsScreen({
         ) : null}
 
         <Panel
-          className={cx("@container overflow-clip transition-opacity duration-150", loading && bookings ? "opacity-70" : "")}
+          className={cx("@container overflow-clip p-px transition-opacity duration-150", loading && bookings ? "opacity-70" : "")}
         >
           <div className="hidden border-b border-line px-5 py-2.5 text-sm font-medium text-ink-3 @3xl:grid @3xl:grid-cols-[5.5rem_minmax(0,1.7fr)_minmax(0,1fr)_3.5rem_5rem_7.5rem_9rem] @3xl:gap-x-4">
             <span>Time</span>

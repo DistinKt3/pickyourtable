@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/portal/sign-in/auth-card";
-import { SignInForm } from "@/components/portal/sign-in/sign-in-form";
+import { SignInForm, type SignInNotice } from "@/components/portal/sign-in/sign-in-form";
 import { currentOperator } from "@/lib/auth/session";
 import { env } from "@/lib/env";
 
@@ -15,7 +15,18 @@ export default async function SignInPage({
 }) {
   const params = await searchParams;
   if (await currentOperator()) redirect("/portal/tonight");
-  const notice = params.link === "expired" ? "link" : params.expired ? "expired" : null;
+  const notice: SignInNotice =
+    params.link === "expired"
+      ? "link"
+      : params.expired
+        ? "expired"
+        : params.sent
+          ? "sent"
+          : params.invalid
+            ? "invalid"
+            : params.limited
+              ? "limited"
+              : null;
   const e = env();
   return (
     <AuthCard eyebrow="Venue portal" title="Sign in">

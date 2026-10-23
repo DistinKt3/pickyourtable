@@ -8,8 +8,13 @@ import { loadVenue } from "@/lib/venue/load";
 
 export const dynamic = "force-dynamic";
 
-/** The link from the sign-in email. Opening it never signs in; only the button does (a POST). */
-export const metadata: Metadata = { title: "Sign in", referrer: "no-referrer" };
+/**
+ * The link from the sign-in email. Opening it never signs in; only the button does (a
+ * POST). The token in the address never leaves this site in a Referer header; the
+ * policy is same-origin rather than no-referrer because no-referrer makes browsers
+ * send `Origin: null`, which the same-origin check rightly refuses.
+ */
+export const metadata: Metadata = { title: "Sign in", referrer: "same-origin" };
 
 const PROBLEMS = {
   expired: {

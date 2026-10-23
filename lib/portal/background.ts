@@ -7,10 +7,13 @@ import { log } from "@/lib/log";
  * and sending a sign-in link: the answer is the same whether or not the account
  * exists, and so is its timing. Inside Next.js the work runs after the response with
  * `after()`. Outside a request (tests and scripts) it runs on the next tick, and
- * `settleBackgroundWork()` waits for it.
+ * `settleBackgroundWork()` waits for it; `holdBackgroundWork()` keeps it queued until
+ * then, so a test can look at the world exactly as the response left it.
  */
 
 const pending = new Set<Promise<void>>();
+const queued: (() => Promise<void>)[] = [];
+let holding = false;
 
 export function runAfterResponse(name: string, work: () => Promise<void>): void {
   const guarded = async () => {
@@ -23,13 +26,24 @@ export function runAfterResponse(name: string, work: () => Promise<void>): void 
   try {
     after(guarded);
   } catch {
+    if (holding) {
+      queued.push(guarded);
+      return;
+    }
     const p = new Promise<void>((resolve) => setTimeout(resolve, 0)).then(guarded);
     pending.add(p);
     void p.finally(() => pending.delete(p));
   }
 }
 
-/** Waits for background work started outside a request (tests). */
+/** Tests: queue background work instead of running it, until `settleBackgroundWork()`. */
+export function holdBackgroundWork(): void {
+  holding = true;
+}
+
+/** Runs any held work and waits for background work started outside a request (tests). */
 export async function settleBackgroundWork(): Promise<void> {
+  holding = false;
+  while (queued.length) await queued.shift()!();
   while (pending.size) await Promise.all(pending);
 }

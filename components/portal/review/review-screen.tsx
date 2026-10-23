@@ -265,7 +265,7 @@ function TableReview({
               </p>
               <p className="mt-1 flex items-center gap-2 text-[0.9375rem] text-ink-2">
                 <TierDot color={tierColor} />
-                {tierName} · seats {t.seats} · {t.code}
+                {tierName} · {t.seats} seats
               </p>
             </div>
             {t.approvedAt ? <Badge tone="success">Approved</Badge> : <Badge tone="accent">To review</Badge>}
@@ -273,9 +273,10 @@ function TableReview({
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[0.9375rem] tabular">
             <dt className="text-ink-3">Position</dt>
             <dd className="text-ink">
-              x {t.x.toFixed(2)} m · z {t.z.toFixed(2)} m
+              <span className="whitespace-nowrap">x {t.x.toFixed(2)} m</span> ·{" "}
+              <span className="whitespace-nowrap">z {t.z.toFixed(2)} m</span>
             </dd>
-            <dt className="text-ink-3">Main seat faces</dt>
+            <dt className="text-ink-3">Facing</dt>
             <dd className="text-ink">
               {facing(t.rotation)}, {t.rotation}°
             </dd>

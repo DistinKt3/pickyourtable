@@ -227,7 +227,7 @@ export function TonightScreen({
   }, [loaded, date]);
 
   return (
-    <div className="tonight md:grid md:h-dvh md:grid-rows-[auto_auto_minmax(0,0.9fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(27rem,1.08fr)] lg:grid-rows-[auto_auto_minmax(0,1fr)] print:block print:h-auto">
+    <div className="tonight md:grid md:h-dvh md:grid-rows-[auto_auto_auto_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(27rem,1.08fr)] lg:grid-rows-[auto_auto_minmax(0,1fr)] print:block print:h-auto">
       <PageHeader
         className="lg:col-start-2 lg:row-start-1 print:hidden"
         eyebrow={
@@ -240,7 +240,12 @@ export function TonightScreen({
         actions={
           <>
             <DateSwitcher date={date} today={today} onChange={changeDate} />
-            <Button variant="secondary" onClick={() => window.print()} icon={<Printer aria-hidden className="size-4" />}>
+            <Button
+              variant="secondary"
+              className="max-sm:hidden"
+              onClick={() => window.print()}
+              icon={<Printer aria-hidden className="size-4" />}
+            >
               Run sheet
             </Button>
           </>
@@ -261,7 +266,7 @@ export function TonightScreen({
         aria-label="Room plan"
         className="relative px-4 pb-4 sm:px-6 md:min-h-0 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:py-4 lg:pr-0 lg:pl-4 print:hidden"
       >
-        <Panel className="relative h-72 overflow-hidden sm:h-80 md:h-full">
+        <Panel className="relative h-72 overflow-hidden sm:h-80 md:aspect-[3/2] md:h-auto md:max-h-[42dvh] md:w-full lg:aspect-auto lg:h-full lg:max-h-none">
           <div className="absolute inset-x-3 top-3 bottom-14">
             <Plan2D
               venue={venue}
@@ -270,6 +275,7 @@ export function TonightScreen({
               ariaLabel={`Room plan, ${isToday ? "tonight" : formatDateLong(date)}`}
               selected={selected}
               onSelect={(code) => selectTable(code)}
+              labelFit="compact-first"
             />
           </div>
           <Legend />
@@ -410,7 +416,7 @@ function Legend() {
     >
       <li className={item}>
         <span aria-hidden className="h-4 w-7 rounded-full bg-accent" />
-        Paid, next booking
+        Paid
       </li>
       <li className={item}>
         <span aria-hidden className="h-4 w-7 rounded-full bg-warning-surface shadow-[inset_0_0_0_1.5px_var(--warning)]" />

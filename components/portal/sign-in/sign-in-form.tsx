@@ -12,10 +12,15 @@ import { PortalError, portalFetch } from "@/lib/portal/client";
  * Asks for a sign-in link. The answer never says whether the address has an
  * account, so the confirmation is worded for both cases.
  */
-export function SignInForm({ notice, devInbox }: { notice: "expired" | "link" | null; devInbox: boolean }) {
+export type SignInNotice = "expired" | "link" | "sent" | "invalid" | "limited" | null;
+
+export function SignInForm({ notice, devInbox }: { notice: SignInNotice; devInbox: boolean }) {
   const [email, setEmail] = useState("");
-  const [sentTo, setSentTo] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // After a plain form post the address is not known here, so the confirmation is generic.
+  const [sentTo, setSentTo] = useState<string | null>(notice === "sent" ? "" : null);
+  const [error, setError] = useState<string | null>(
+    notice === "invalid" ? "Enter the email address you use for the venue." : null,
+  );
   const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent) {
@@ -37,7 +42,7 @@ export function SignInForm({ notice, devInbox }: { notice: "expired" | "link" | 
     }
   }
 
-  if (sentTo) {
+  if (sentTo !== null) {
     return (
       <div aria-live="polite">
         <div className="flex items-start gap-3 rounded-card bg-surface-2 px-4 py-4">
@@ -45,8 +50,8 @@ export function SignInForm({ notice, devInbox }: { notice: "expired" | "link" | 
           <div className="text-base text-ink-2">
             <p className="font-semibold text-ink">Check your email</p>
             <p className="mt-1">
-              If <span className="font-medium break-all text-ink">{sentTo}</span> has a venue account, a sign-in link is on its
-              way. It works once and is valid for 15 minutes.
+              If {sentTo ? <span className="font-medium break-all text-ink">{sentTo}</span> : "that address"} has a venue account,
+              a sign-in link is on its way. It works once and is valid for 15 minutes.
             </p>
           </div>
         </div>
@@ -68,10 +73,19 @@ export function SignInForm({ notice, devInbox }: { notice: "expired" | "link" | 
   }
 
   return (
-    <form noValidate onSubmit={(e) => void submit(e)} className="flex flex-col gap-5">
+    <form
+      method="post"
+      action="/api/portal/auth/request"
+      noValidate
+      onSubmit={(e) => void submit(e)}
+      className="flex flex-col gap-5"
+    >
       {notice === "expired" ? <Banner tone="neutral">Your session ended. Sign in again to carry on.</Banner> : null}
       {notice === "link" ? (
         <Banner tone="warning">That sign-in link has expired or was already used. Ask for a new one below.</Banner>
+      ) : null}
+      {notice === "limited" ? (
+        <Banner tone="warning">Too many sign-in requests. Wait a few minutes, then try again.</Banner>
       ) : null}
       <p className="text-base text-ink-2">We&rsquo;ll email you a link to sign in. There is no password to remember.</p>
       <TextField

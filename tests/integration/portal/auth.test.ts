@@ -1,5 +1,5 @@
 import { and, desc, eq, gt } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { POST as redeemRoute } from "@/app/api/portal/auth/redeem/route";
 import { POST as requestRoute } from "@/app/api/portal/auth/request/route";
 import { POST as signOutRoute } from "@/app/api/portal/auth/sign-out/route";
@@ -7,8 +7,9 @@ import { GET as meRoute } from "@/app/api/portal/me/route";
 import { db } from "@/db/client";
 import { emailMessage, magicLink, operator } from "@/db/schema";
 import { issueMagicLink, sessionCookieName } from "@/lib/auth/session";
+import { resetEnvCache } from "@/lib/env";
 import { inspectSignInLink } from "@/lib/portal/auth";
-import { settleBackgroundWork } from "@/lib/portal/background";
+import { holdBackgroundWork, settleBackgroundWork } from "@/lib/portal/background";
 import { sha256 } from "@/lib/security/crypto";
 import { call, errorCode, HALCYON_HOST, HALCYON_OWNER, ORCHARD_HOST, request } from "./helpers";
 
@@ -30,11 +31,24 @@ async function latestMail(to: string, since: Date) {
 
 const headerNames = (r: Response) => [...r.headers.keys()].filter((k) => k !== "x-request-id").sort();
 
+// The limits below are the production ones, whatever a developer's environment scales them to.
+const scale = process.env.RATE_LIMIT_SCALE;
+beforeAll(() => {
+  process.env.RATE_LIMIT_SCALE = "1";
+  resetEnvCache();
+});
+afterAll(() => {
+  if (scale === undefined) delete process.env.RATE_LIMIT_SCALE;
+  else process.env.RATE_LIMIT_SCALE = scale;
+  resetEnvCache();
+});
+
 describe("magic-link sign-in", () => {
   it("answers the same for a known and an unknown email, and only the known one gets a link", async () => {
     const since = new Date(Date.now() - 1000);
     const knownBefore = await linksFor(HALCYON_HOST);
 
+    holdBackgroundWork();
     const known = await call(requestRoute, request("POST", "/api/portal/auth/request", { body: { email: HALCYON_HOST } }));
     // The lookup and the email run after the response: at answer time no link exists yet.
     expect(await linksFor(HALCYON_HOST)).toBe(knownBefore);
@@ -179,6 +193,21 @@ describe("magic-link sign-in", () => {
     const after = await call(meRoute, request("GET", "/api/portal/me", { cookie }));
     expect(after.status).toBe(401);
     expect(errorCode(after)).toBe("signed_out");
+  });
+
+  it("answers a plain form post the same way for known and unknown emails", async () => {
+    const known = await call(requestRoute, request("POST", "/api/portal/auth/request", { form: { email: ` ${ORCHARD_HOST} ` } }));
+    const unknown = await call(
+      requestRoute,
+      request("POST", "/api/portal/auth/request", { form: { email: "someone@orchard-room.example" } }),
+    );
+    for (const r of [known, unknown]) {
+      expect(r.status).toBe(303);
+      expect(r.res.headers.get("location")).toBe("http://localhost:3000/portal/sign-in?sent=1");
+    }
+    const bad = await call(requestRoute, request("POST", "/api/portal/auth/request", { form: { email: "not an email" } }));
+    expect(bad.res.headers.get("location")).toBe("http://localhost:3000/portal/sign-in?invalid=1");
+    await settleBackgroundWork();
   });
 
   it("rejects a sign-in request from another site", async () => {
