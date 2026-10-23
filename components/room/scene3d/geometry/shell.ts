@@ -408,7 +408,7 @@ function kitchenWall(L: number, h: number, D: number, p: Palette, seed: number):
     const kind = Math.floor(hash(seed * 11 + i) * 3);
     const y = shelfY + 0.035;
     if (kind === 0) {
-      for (let k = 0; k < 6; k++) out.push(place(plate(p.votive), x, y + k * 0.016, wallZ - 0.16));
+      for (let k = 0; k < 6; k++) out.push(place(plate(p.plate), x, y + k * 0.016, wallZ - 0.16));
     } else if (kind === 1) {
       const r = 0.1 + hash(i) * 0.03;
       out.push(
@@ -491,6 +491,61 @@ function barWall(L: number, D: number, p: Palette): THREE.BufferGeometry[] {
   return out;
 }
 
+/** A low clipped hedge around the open edges of garden areas, so the lawn has an edge. */
+function gardenHedges(venue: Venue, c: Colors): THREE.BufferGeometry[] {
+  const out: THREE.BufferGeometry[] = [];
+  const W = venue.room.width;
+  const D = venue.room.depth;
+  const nearRoom = (x: number, z: number) => x > -0.6 && x < W + 0.6 && z > -0.6 && z < D + 0.6;
+  venue.areas.forEach((a, ai) => {
+    if (a.kind !== "garden") return;
+    const tops = areaTops(venue);
+    const y = tops.get(a.id) ?? 0;
+    let cx = 0;
+    let cz = 0;
+    for (const [x, z] of a.polygon) {
+      cx += x;
+      cz += z;
+    }
+    cx /= a.polygon.length;
+    cz /= a.polygon.length;
+    a.polygon.forEach(([x0, z0], i) => {
+      const [x1, z1] = a.polygon[(i + 1) % a.polygon.length]!;
+      const mx = (x0 + x1) / 2;
+      const mz = (z0 + z1) / 2;
+      if (nearRoom(mx, mz)) return;
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      if (len < 1) return;
+      const dx = (x1 - x0) / len;
+      const dz = (z1 - z0) / len;
+      // Inset toward the area's middle.
+      let nx = -dz;
+      let nz = dx;
+      if ((cx - mx) * nx + (cz - mz) * nz < 0) {
+        nx = -nx;
+        nz = -nz;
+      }
+      const inset = 0.45;
+      const hedgeLen = len - inset * 2;
+      const body = softBox(hedgeLen, 0.5, 0.5, 0.14, 4, 3);
+      out.push(paint(place(body, mx + nx * inset, y, mz + nz * inset, Math.atan2(-dz, dx)), c.palette.hedge, MATTE));
+      const n = Math.max(2, Math.round(hedgeLen / 0.7));
+      for (let k = 0; k < n; k++) {
+        const s = -hedgeLen / 2 + 0.35 + ((hedgeLen - 0.7) / Math.max(1, n - 1)) * k;
+        const tone = new THREE.Color(c.palette.hedge).multiplyScalar(0.96 + hash(ai * 97 + i * 13 + k) * 0.08);
+        out.push(
+          paint(
+            place(blob(0.38, 0.08, 0.2, ai * 7 + i * 3 + k), mx + nx * inset + dx * s, y + 0.5, mz + nz * inset + dz * s),
+            tone,
+            MATTE,
+          ),
+        );
+      }
+    });
+  });
+  return out;
+}
+
 function fixtures(
   venue: Venue,
   c: Colors,
@@ -516,7 +571,7 @@ function fixtures(
         parts.push(paint(softBox(L, h - 0.045, D, 0.02), p.chairWood, SATIN, { pattern: PATTERN.flutes }));
         parts.push(paint(place(softBox(L + 0.03, 0.045, D + 0.08, 0.012), 0, h - 0.045, 0), p.steel, STEEL));
         const n = Math.floor(L / 0.9);
-        for (let i = 0; i < n; i++) parts.push(place(plate(p.votive), -L / 2 + (L / n) * (i + 0.5), h, -0.02));
+        for (let i = 0; i < n; i++) parts.push(place(plate(p.plate), -L / 2 + (L / n) * (i + 0.5), h, -0.02));
         // Heat-lamp gantry over the pass, only at eye level.
         for (const x of [-L / 2 + 0.2, 0, L / 2 - 0.2])
           sit.push(paint(place(post(0.02, 0.02, h, 1.78, 8), x, 0, 0), p.steelDark, STEEL));
@@ -626,8 +681,7 @@ function fixtures(
         parts.push(paint(softBox(L, h - 0.03, D, 0.02), p.chairWood, SATIN));
         parts.push(paint(place(softBox(L + 0.02, 0.03, D + 0.02, 0.01), 0, h - 0.03, 0), p.stone, SATIN));
         for (let s = 0; s < 3; s++) {
-          for (let k = 0; k < 6; k++)
-            parts.push(place(plate(p.votive), -L / 2 + 0.3 + s * ((L - 0.6) / 2), h + k * 0.016, -0.05));
+          for (let k = 0; k < 6; k++) parts.push(place(plate(p.plate), -L / 2 + 0.3 + s * ((L - 0.6) / 2), h + k * 0.016, -0.05));
         }
         break;
       }
@@ -645,29 +699,32 @@ function fixtures(
         break;
       }
       case "planter": {
-        parts.push(paint(softBox(L, h, D, 0.035), p.planter, MATTE));
-        parts.push(paint(place(softBox(L - 0.08, 0.02, D - 0.08, 0.01), 0, h - 0.04, 0), p.soil, MATTE));
+        // A planter with a slightly proud rim and a shadow gap at its foot.
+        parts.push(paint(place(softBox(L - 0.06, 0.05, D - 0.06, 0.02), 0, 0, 0), p.steelDark, MATTE));
+        parts.push(paint(place(softBox(L, h - 0.09, D, 0.03), 0, 0.04, 0), p.planter, MATTE));
+        parts.push(paint(place(softBox(L + 0.03, 0.05, D + 0.03, 0.02), 0, h - 0.05, 0), p.stone, SATIN));
+        parts.push(paint(place(softBox(L - 0.1, 0.02, D - 0.1, 0.01), 0, h - 0.035, 0), p.soil, MATTE));
         if (L / D > 1.6) {
-          // A clipped hedge: overlapping soft lobes with a level top.
-          const n = Math.max(3, Math.ceil(L / 0.2));
+          // A clipped hedge: one soft, squared-off mass with a gently uneven top.
+          parts.push(paint(place(softBox(L - 0.1, 0.42, D - 0.12, 0.13, 4, 3), 0, h - 0.04, 0), p.hedge, MATTE));
+          const n = Math.max(2, Math.round(L / 0.5));
           for (let i = 0; i < n; i++) {
-            const tone = new THREE.Color(p.hedge).multiplyScalar(0.95 + hash(fi * 31 + i) * 0.1);
-            const x = -L / 2 + 0.16 + ((L - 0.32) / (n - 1)) * i;
-            const z = (hash(fi * 7 + i) - 0.5) * 0.06;
-            parts.push(paint(place(blob(0.22, 0.2, D * 0.4, fi * 3 + i), x, h + 0.13, z), tone, MATTE));
+            const tone = new THREE.Color(p.hedge).multiplyScalar(0.97 + hash(fi * 31 + i) * 0.06);
+            const x = -L / 2 + 0.3 + ((L - 0.6) / Math.max(1, n - 1)) * i;
+            parts.push(paint(place(blob(0.3, 0.09, D * 0.36, fi * 3 + i), x, h + 0.3, 0), tone, MATTE));
           }
         } else {
           parts.push(paint(post(0.05, 0.032, h - 0.04, h + 1.3, 10), p.trunk, MATTE));
-          const crown: [number, number, number, number][] = [
-            [0, 1.62, 0, 0.5],
-            [0.28, 1.5, 0.12, 0.36],
-            [-0.24, 1.52, -0.18, 0.38],
-            [0.06, 1.88, -0.08, 0.34],
-            [-0.1, 1.48, 0.28, 0.32],
+          // One full, gently uneven crown with a few softer lobes underneath.
+          parts.push(paint(place(blob(0.62, 0.52, 0.6, fi * 5, 3, 0.11, 1.4), 0, h + 1.42, 0), p.canopy, MATTE));
+          const lobes: [number, number, number, number][] = [
+            [0.34, 1.22, 0.1, 0.34],
+            [-0.3, 1.25, -0.16, 0.33],
+            [0.02, 1.2, 0.34, 0.3],
           ];
-          crown.forEach(([x, y, z, r], i) => {
-            const tone = new THREE.Color(p.canopy).multiplyScalar(0.92 + hash(fi * 17 + i) * 0.16);
-            parts.push(paint(place(blob(r, r * 0.86, r, fi * 5 + i), x, h + y - 0.3, z), tone, MATTE));
+          lobes.forEach(([x, y, z, r], i) => {
+            const tone = new THREE.Color(p.canopy).multiplyScalar(0.94 + hash(fi * 17 + i) * 0.06);
+            parts.push(paint(place(blob(r, r * 0.8, r, fi * 5 + i + 1, 2, 0.1, 1.6), x, h + y, z), tone, MATTE));
           });
         }
         break;
@@ -916,6 +973,7 @@ export function buildShell(venue: Venue, palette: Palette, accent: string): Shel
   out.clay.push(...floors(venue, c));
   walls(venue, c, out);
   fixtures(venue, c, out);
+  out.clay.push(...gardenHedges(venue, c));
   ceiling(venue, c, out.sit);
   const s = surroundings(venue, c);
   const glass = out.glass.length ? mergeGlass(out.glass) : empty();

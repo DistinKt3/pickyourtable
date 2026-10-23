@@ -49,6 +49,8 @@ export interface Palette {
   ceiling: string;
   downlight: string;
   votive: string;
+  /** Plates and stacked crockery. */
+  plate: string;
   /** Emissive strength of the table votives (0 in daylight). */
   votiveGlow: number;
   water: { deep: string; shallow: string; sky: string };
@@ -72,6 +74,8 @@ export interface Palette {
   ringAlpha: number;
   /** Exposure before tone mapping. */
   exposure: number;
+  /** The look after tone mapping. */
+  post: { contrast: number; saturation: number };
 }
 
 export const LIGHT: Palette = {
@@ -116,9 +120,10 @@ export const LIGHT: Palette = {
   ceiling: "#f3eee6",
   downlight: "#fff4dd",
   votive: "#efe6d6",
+  plate: "#f1e9dc",
   votiveGlow: 0,
-  water: { deep: "#4f7f8f", shallow: "#9cc0c8", sky: "#dbe7ea" },
-  sky: { zenith: "#9fc0d4", horizon: "#e8eeee", haze: "#e9ece8", far: "#a9b9bf" },
+  water: { deep: "#3f6f7f", shallow: "#86aab3", sky: "#e4e2d8" },
+  sky: { zenith: "#7aa6c8", horizon: "#f0e7d8", haze: "#ece6da", far: "#a3abac" },
   light: {
     hemiSky: "#e9eef2",
     hemiGround: "#cdbca3",
@@ -136,59 +141,61 @@ export const LIGHT: Palette = {
   ao: { intensity: 3, color: "#2a2018" },
   ringAlpha: 0.95,
   exposure: 1.5,
+  post: { contrast: 0.14, saturation: 0.16 },
 };
 
 export const DUSK: Palette = {
   theme: "dark",
   background: "#12110f",
   floor: {
-    dining: "#433b33",
-    kitchen: "#3b3834",
-    terrace: "#3e3429",
-    service: "#3d3730",
-    promenade: "#2b2926",
-    garden: "#283023",
+    dining: "#3d3934",
+    kitchen: "#383633",
+    terrace: "#3b342d",
+    service: "#3a3632",
+    promenade: "#292826",
+    garden: "#252a22",
   },
-  interiorGlow: "#ffc48a",
-  interiorGlowStrength: 0.035,
-  ground: { stone: "#262422", lawn: "#22271f" },
-  quay: "#1f1e1c",
-  wall: "#57504a",
-  wallCap: "#635b54",
-  sill: "#4a443e",
-  frame: "#2c2926",
-  glass: "#3c5560",
+  interiorGlow: "#ffcf9e",
+  interiorGlowStrength: 0.022,
+  ground: { stone: "#201f1d", lawn: "#1d211b" },
+  quay: "#1a1918",
+  wall: "#58534d",
+  wallCap: "#635d57",
+  sill: "#4a4540",
+  frame: "#2a2826",
+  glass: "#3a4f58",
   glassOpacity: 0.2,
-  glassSheen: 0.25,
-  tableTop: "#7a6650",
-  tableTopQuiet: "#57504a",
-  metal: "#3a342f",
-  chairWood: "#6e5944",
-  chairWoodQuiet: "#4f4943",
-  upholsteryQuiet: "#57514b",
+  glassSheen: 0.22,
+  tableTop: "#76664f",
+  tableTopQuiet: "#4f4a45",
+  metal: "#3a3531",
+  chairWood: "#665441",
+  chairWoodQuiet: "#4d4843",
+  upholsteryQuiet: "#555049",
   upholsteryTint: 0.42,
-  upholsteryBase: "#5d5249",
+  upholsteryBase: "#5a5149",
   steel: "#6f6c68",
-  steelDark: "#3a3835",
+  steelDark: "#373533",
   hedge: "#3a4631",
   canopy: "#414f35",
   trunk: "#3a3029",
-  planter: "#47403a",
-  soil: "#28221d",
-  stone: "#4a453f",
+  planter: "#46413c",
+  soil: "#26211c",
+  stone: "#4a4641",
   bottle: "#5c6b63",
-  ceiling: "#4b4540",
+  ceiling: "#4b4641",
   downlight: "#ffdcae",
-  votive: "#f1dcbc",
+  votive: "#f2c48c",
+  plate: "#a39a8e",
   votiveGlow: 2.2,
-  water: { deep: "#0d161d", shallow: "#1a2a33", sky: "#2c3240" },
-  sky: { zenith: "#10172a", horizon: "#4b3f40", haze: "#332f31", far: "#24242c" },
+  water: { deep: "#0c1318", shallow: "#18232a", sky: "#2a2f3a" },
+  sky: { zenith: "#10172a", horizon: "#4b3f40", haze: "#2c2a2b", far: "#22232a" },
   light: {
-    hemiSky: "#5a6688",
-    hemiGround: "#33291f",
-    hemi: 0.8,
-    key: "#ffe0bf",
-    keyIntensity: 1.9,
+    hemiSky: "#56617d",
+    hemiGround: "#2c2620",
+    hemi: 0.85,
+    key: "#ffe8d0",
+    keyIntensity: 1.8,
     keyElevation: 64,
     env: 0.14,
     poolColor: "#ffd2a0",
@@ -200,6 +207,7 @@ export const DUSK: Palette = {
   ao: { intensity: 2.6, color: "#000000" },
   ringAlpha: 1,
   exposure: 1.35,
+  post: { contrast: 0.1, saturation: 0.04 },
 };
 
 export function paletteFor(theme: Theme): Palette {

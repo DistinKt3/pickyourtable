@@ -38,6 +38,7 @@ export type Quality = 0 | 1 | 2;
 
 export interface EffectsProps {
   background: string;
+  look: { contrast: number; saturation: number };
   quality: Quality;
   aoIntensity: number;
   aoColor: string;
@@ -45,7 +46,7 @@ export interface EffectsProps {
   render?: boolean;
 }
 
-export function Effects({ background, quality, aoIntensity, aoColor, render = false }: EffectsProps) {
+export function Effects({ background, look, quality, aoIntensity, aoColor, render = false }: EffectsProps) {
   const invalidate = useThree((s) => s.invalidate);
   const backdrop = useMemo(() => new BackdropEffect(), []);
   useEffect(() => {
@@ -73,8 +74,8 @@ export function Effects({ background, quality, aoIntensity, aoColor, render = fa
       )}
       <ToneMapping mode={ToneMappingMode.AGX} />
       {/* AgX is gentle at the top end; a touch of contrast and color keeps the clay crisp. */}
-      <BrightnessContrast brightness={0.02} contrast={0.14} />
-      <HueSaturation saturation={0.16} />
+      <BrightnessContrast brightness={0.02} contrast={look.contrast} />
+      <HueSaturation saturation={look.saturation} />
       <primitive object={backdrop} />
       {!render && quality < 2 ? <SMAA /> : <></>}
     </EffectComposer>

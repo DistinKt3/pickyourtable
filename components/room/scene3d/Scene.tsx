@@ -112,7 +112,13 @@ export function Scene({ data, palette, background, reducedMotion, onReady }: Sce
         <LabelProjector data={data} />
         <Ready onReady={onReady} />
       </Suspense>
-      <Effects background={background} quality={quality} aoIntensity={palette.ao.intensity} aoColor={palette.ao.color} />
+      <Effects
+        background={background}
+        look={palette.post}
+        quality={quality}
+        aoIntensity={palette.ao.intensity}
+        aoColor={palette.ao.color}
+      />
       <Stats />
     </>
   );

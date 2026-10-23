@@ -121,6 +121,7 @@ function RenderScene({ data, code }: { data: RoomData; code: string }) {
       </Suspense>
       <Effects
         background={RENDER.background}
+        look={RENDER.post}
         quality={2}
         aoIntensity={RENDER.ao.intensity * 0.9}
         aoColor={RENDER.ao.color}

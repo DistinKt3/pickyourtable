@@ -215,7 +215,7 @@ export function hash(n: number): number {
 }
 
 /** An organic blob (hedges, canopies): a squashed, gently lumpy sphere sitting at its center. */
-export function blob(rx: number, ry: number, rz: number, seed: number, detail = 2): THREE.BufferGeometry {
+export function blob(rx: number, ry: number, rz: number, seed: number, detail = 2, amp = 0.06, freq = 1): THREE.BufferGeometry {
   const ico = new THREE.IcosahedronGeometry(1, detail);
   ico.deleteAttribute("normal");
   ico.deleteAttribute("uv");
@@ -226,7 +226,10 @@ export function blob(rx: number, ry: number, rz: number, seed: number, detail = 
     const x = p.getX(i);
     const y = p.getY(i);
     const z = p.getZ(i);
-    const n = 1 + Math.sin(x * 5.1 + seed) * Math.sin(y * 4.3 + seed * 1.7) * Math.sin(z * 4.7 + seed * 0.3) * 0.06;
+    const n =
+      1 +
+      Math.sin(x * 5.1 * freq + seed) * Math.sin(y * 4.3 * freq + seed * 1.7) * Math.sin(z * 4.7 * freq + seed * 0.3) * amp +
+      Math.sin(x * 11.3 * freq + seed * 2.1) * Math.sin(z * 9.7 * freq + seed) * amp * 0.35;
     p.setXYZ(i, x * rx * n, y * ry * n, z * rz * n);
   }
   g.computeVertexNormals();

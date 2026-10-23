@@ -127,9 +127,10 @@ function projectLabels(
   const st = useRoom.getState();
   camera.updateMatrixWorld();
   const hideAll = rt.sit > 0.02 || st.sitting != null;
-  const far =
-    distanceOf({ x: camera.position.x, y: camera.position.y, z: camera.position.z }, rt.camera.target) >
-    rt.overviewDistance * 1.12;
+  const distance = distanceOf({ x: camera.position.x, y: camera.position.y, z: camera.position.z }, rt.camera.target);
+  const far = distance > rt.overviewDistance * 1.12;
+  // Tables seated by the host only get a label once the guest has zoomed in.
+  const close = distance < rt.overviewDistance * 0.62;
   const boxes: LabelBox[] = [];
   data.tables.forEach((t, i) => {
     const slot = rt.labels.get(t.id);
@@ -137,11 +138,13 @@ function projectLabels(
     const a = anchors[i]!;
     v.set(a.x, a.y + (rt.lift.get(t.id) ?? 0), a.z).project(camera);
     const x = ((v.x + 1) / 2) * size.width;
-    const y = ((1 - v.y) / 2) * size.height;
+    // The pill floats just above its table, so the table itself stays in view.
+    const y = ((1 - v.y) / 2) * size.height - slot.height / 2 - 6;
     const state = visualState(t, st.availability?.[t.id]);
     let priority = labelPriority(state, { selected: st.selected === t.id, hovered: st.hovered === t.id });
     // Zoomed far out, only the selected, hovered and available tables compete for room.
     if (far && priority < PRIORITY.available) priority = -1;
+    if (!close && priority === PRIORITY.quiet) priority = -1;
     const depth = camera.position.distanceTo(v.set(a.x, a.y, a.z));
     boxes.push({
       code: t.id,

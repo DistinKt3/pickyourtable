@@ -1,16 +1,5 @@
 import { planOrientation, PORTRAIT_ASPECT } from "@/lib/room/orientation";
-import {
-  bearing,
-  type Bounds,
-  deg,
-  norm,
-  rad,
-  ring,
-  seatView,
-  siteBounds,
-  type Vec3,
-  verticalFovForAspect,
-} from "@/lib/venue/geometry";
+import { bearing, deg, norm, rad, ring, seatView, siteBounds, type Vec3, verticalFovForAspect } from "@/lib/venue/geometry";
 import type { Venue, VenueTable } from "@/lib/venue/schema";
 
 /**
@@ -138,11 +127,36 @@ function extents(pts: { x: number; y: number }[]) {
 }
 
 /** The box the plan must fill: every table ring, the room and outdoor areas, wall-high. */
-export function sitePoints(venue: Venue, b: Bounds = siteBounds(venue)): Vec3[] {
-  const pts: Vec3[] = [];
-  for (const y of [0, venue.room.wallHeight]) {
-    pts.push({ x: b.minX, y, z: b.minZ }, { x: b.maxX, y, z: b.minZ }, { x: b.maxX, y, z: b.maxZ }, { x: b.minX, y, z: b.maxZ });
+export function sitePoints(venue: Venue): Vec3[] {
+  const flat: { x: number; z: number }[] = [];
+  const W = venue.room.width;
+  const D = venue.room.depth;
+  const t = 0.2;
+  flat.push({ x: -t, z: -t }, { x: W + t, z: -t }, { x: W + t, z: D + t }, { x: -t, z: D + t });
+  for (const w of venue.walls) flat.push({ x: w.from[0], z: w.from[1] }, { x: w.to[0], z: w.to[1] });
+  // Outdoor areas count when guests sit there; empty lawn and promenade fade out instead.
+  for (const a of venue.areas) {
+    const xs = a.polygon.map((p) => p[0]);
+    const zs = a.polygon.map((p) => p[1]);
+    const hasTable = venue.tables.some(
+      (tb) => tb.x >= Math.min(...xs) && tb.x <= Math.max(...xs) && tb.z >= Math.min(...zs) && tb.z <= Math.max(...zs),
+    );
+    if (hasTable) for (const p of a.polygon) flat.push({ x: p[0], z: p[1] });
   }
+  for (const f of venue.fixtures) {
+    const r = Math.hypot(f.width, f.depth) / 2;
+    flat.push({ x: f.x - r, z: f.z - r }, { x: f.x + r, z: f.z + r }, { x: f.x - r, z: f.z + r }, { x: f.x + r, z: f.z - r });
+  }
+  for (const tb of venue.tables) {
+    const rg = ring(tb);
+    const reach = rg.kind === "circle" ? rg.r : Math.hypot(rg.width, rg.depth) / 2;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      flat.push({ x: rg.x + Math.cos(a) * reach, z: rg.z + Math.sin(a) * reach });
+    }
+  }
+  const pts: Vec3[] = [];
+  for (const p of flat) pts.push({ x: p.x, y: 0, z: p.z }, { x: p.x, y: venue.room.wallHeight, z: p.z });
   return pts;
 }
 
@@ -211,7 +225,7 @@ export function defaultPose(venue: Venue, aspect: number): Pose & { bearing: num
 
 /** Portrait screens look a little more from above, so the long room fills the height. */
 export function defaultPitch(aspect: number): number {
-  return aspect < PORTRAIT_ASPECT ? DEFAULT_PITCH + 6 : DEFAULT_PITCH;
+  return aspect < PORTRAIT_ASPECT ? DEFAULT_PITCH + 10 : DEFAULT_PITCH;
 }
 
 /** Distance limits: close enough to read a table, never past the whole site. */
@@ -235,7 +249,7 @@ export function frameRegion(aspect: number): { top: number; bottom: number; side
 export function frameRadius(table: VenueTable): number {
   const r = ring(table);
   const reach = r.kind === "circle" ? r.r : Math.hypot(r.width, r.depth) / 2;
-  return Math.max(2.6, reach + 1.7);
+  return Math.max(2.2, reach + 1.3);
 }
 
 /**
