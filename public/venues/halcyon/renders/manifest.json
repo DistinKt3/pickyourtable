@@ -1,0 +1,355 @@
+{
+  "venue": "halcyon",
+  "venueSha256": "a4751af92641523d62fc51ecaec22c5b7892838530a3a2226b3ebede9bb8c9c1",
+  "camera": {
+    "eyeHeightM": 1.15,
+    "focalMm": 26,
+    "aspect": "3:2"
+  },
+  "capture": {
+    "width": 2880,
+    "height": 1920
+  },
+  "tables": {
+    "B1": {
+      "label": "Booth 1",
+      "files": {
+        "B1-640.avif": {
+          "bytes": 8131
+        },
+        "B1-640.webp": {
+          "bytes": 13326
+        },
+        "B1-1280.avif": {
+          "bytes": 16294
+        },
+        "B1-1280.webp": {
+          "bytes": 28818
+        },
+        "B1-email.jpg": {
+          "bytes": 17687
+        }
+      }
+    },
+    "B2": {
+      "label": "Booth 2",
+      "files": {
+        "B2-640.avif": {
+          "bytes": 10032
+        },
+        "B2-640.webp": {
+          "bytes": 16450
+        },
+        "B2-1280.avif": {
+          "bytes": 20375
+        },
+        "B2-1280.webp": {
+          "bytes": 35332
+        },
+        "B2-email.jpg": {
+          "bytes": 19055
+        }
+      }
+    },
+    "B3": {
+      "label": "Booth 3",
+      "files": {
+        "B3-640.avif": {
+          "bytes": 10111
+        },
+        "B3-640.webp": {
+          "bytes": 16648
+        },
+        "B3-1280.avif": {
+          "bytes": 20362
+        },
+        "B3-1280.webp": {
+          "bytes": 33962
+        },
+        "B3-email.jpg": {
+          "bytes": 19262
+        }
+      }
+    },
+    "B4": {
+      "label": "Booth 4",
+      "files": {
+        "B4-640.avif": {
+          "bytes": 10973
+        },
+        "B4-640.webp": {
+          "bytes": 17168
+        },
+        "B4-1280.avif": {
+          "bytes": 22465
+        },
+        "B4-1280.webp": {
+          "bytes": 36662
+        },
+        "B4-email.jpg": {
+          "bytes": 20103
+        }
+      }
+    },
+    "C1": {
+      "label": "Counter 1",
+      "files": {
+        "C1-640.avif": {
+          "bytes": 5228
+        },
+        "C1-640.webp": {
+          "bytes": 7400
+        },
+        "C1-1280.avif": {
+          "bytes": 10175
+        },
+        "C1-1280.webp": {
+          "bytes": 17674
+        },
+        "C1-email.jpg": {
+          "bytes": 14511
+        }
+      }
+    },
+    "C2": {
+      "label": "Counter 2",
+      "files": {
+        "C2-640.avif": {
+          "bytes": 5167
+        },
+        "C2-640.webp": {
+          "bytes": 7646
+        },
+        "C2-1280.avif": {
+          "bytes": 10092
+        },
+        "C2-1280.webp": {
+          "bytes": 18346
+        },
+        "C2-email.jpg": {
+          "bytes": 14700
+        }
+      }
+    },
+    "C3": {
+      "label": "Counter 3",
+      "files": {
+        "C3-640.avif": {
+          "bytes": 4656
+        },
+        "C3-640.webp": {
+          "bytes": 6650
+        },
+        "C3-1280.avif": {
+          "bytes": 8936
+        },
+        "C3-1280.webp": {
+          "bytes": 15926
+        },
+        "C3-email.jpg": {
+          "bytes": 13313
+        }
+      }
+    },
+    "T1": {
+      "label": "Terrace 1",
+      "files": {
+        "T1-640.avif": {
+          "bytes": 5320
+        },
+        "T1-640.webp": {
+          "bytes": 8226
+        },
+        "T1-1280.avif": {
+          "bytes": 10611
+        },
+        "T1-1280.webp": {
+          "bytes": 18754
+        },
+        "T1-email.jpg": {
+          "bytes": 11464
+        }
+      }
+    },
+    "T2": {
+      "label": "Terrace 2",
+      "files": {
+        "T2-640.avif": {
+          "bytes": 4821
+        },
+        "T2-640.webp": {
+          "bytes": 6724
+        },
+        "T2-1280.avif": {
+          "bytes": 9656
+        },
+        "T2-1280.webp": {
+          "bytes": 15798
+        },
+        "T2-email.jpg": {
+          "bytes": 10649
+        }
+      }
+    },
+    "T3": {
+      "label": "Terrace 3",
+      "files": {
+        "T3-640.avif": {
+          "bytes": 6887
+        },
+        "T3-640.webp": {
+          "bytes": 10934
+        },
+        "T3-1280.avif": {
+          "bytes": 14083
+        },
+        "T3-1280.webp": {
+          "bytes": 24948
+        },
+        "T3-email.jpg": {
+          "bytes": 14208
+        }
+      }
+    },
+    "T4": {
+      "label": "Terrace 4",
+      "files": {
+        "T4-640.avif": {
+          "bytes": 8346
+        },
+        "T4-640.webp": {
+          "bytes": 12914
+        },
+        "T4-1280.avif": {
+          "bytes": 17269
+        },
+        "T4-1280.webp": {
+          "bytes": 28900
+        },
+        "T4-email.jpg": {
+          "bytes": 16347
+        }
+      }
+    },
+    "W1": {
+      "label": "Window 1",
+      "files": {
+        "W1-640.avif": {
+          "bytes": 3891
+        },
+        "W1-640.webp": {
+          "bytes": 5860
+        },
+        "W1-1280.avif": {
+          "bytes": 7585
+        },
+        "W1-1280.webp": {
+          "bytes": 13398
+        },
+        "W1-email.jpg": {
+          "bytes": 9167
+        }
+      }
+    },
+    "W2": {
+      "label": "Window 2",
+      "files": {
+        "W2-640.avif": {
+          "bytes": 4161
+        },
+        "W2-640.webp": {
+          "bytes": 6270
+        },
+        "W2-1280.avif": {
+          "bytes": 8221
+        },
+        "W2-1280.webp": {
+          "bytes": 14252
+        },
+        "W2-email.jpg": {
+          "bytes": 10881
+        }
+      }
+    },
+    "W3": {
+      "label": "Window 3",
+      "files": {
+        "W3-640.avif": {
+          "bytes": 3362
+        },
+        "W3-640.webp": {
+          "bytes": 4654
+        },
+        "W3-1280.avif": {
+          "bytes": 6405
+        },
+        "W3-1280.webp": {
+          "bytes": 10720
+        },
+        "W3-email.jpg": {
+          "bytes": 8383
+        }
+      }
+    },
+    "W4": {
+      "label": "Window 4",
+      "files": {
+        "W4-640.avif": {
+          "bytes": 4037
+        },
+        "W4-640.webp": {
+          "bytes": 6176
+        },
+        "W4-1280.avif": {
+          "bytes": 7806
+        },
+        "W4-1280.webp": {
+          "bytes": 14084
+        },
+        "W4-email.jpg": {
+          "bytes": 10706
+        }
+      }
+    },
+    "W5": {
+      "label": "Window 5",
+      "files": {
+        "W5-640.avif": {
+          "bytes": 3875
+        },
+        "W5-640.webp": {
+          "bytes": 5870
+        },
+        "W5-1280.avif": {
+          "bytes": 7673
+        },
+        "W5-1280.webp": {
+          "bytes": 13338
+        },
+        "W5-email.jpg": {
+          "bytes": 9355
+        }
+      }
+    },
+    "W6": {
+      "label": "Window 6",
+      "files": {
+        "W6-640.avif": {
+          "bytes": 3585
+        },
+        "W6-640.webp": {
+          "bytes": 5308
+        },
+        "W6-1280.avif": {
+          "bytes": 6966
+        },
+        "W6-1280.webp": {
+          "bytes": 12672
+        },
+        "W6-email.jpg": {
+          "bytes": 8465
+        }
+      }
+    }
+  }
+}
