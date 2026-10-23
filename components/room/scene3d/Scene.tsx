@@ -14,7 +14,7 @@ import { tablePlacements } from "./layout";
 import { Lights } from "./Lights";
 import { createFadeUniforms, createSharedUniforms } from "./materials";
 import type { Palette } from "./palette";
-import { patchRuntime, type Runtime, useRuntime } from "./runtime";
+import { measureLabel, patchRuntime, type Runtime, useRuntime } from "./runtime";
 import { Shell } from "./Shell";
 import { Tables } from "./Tables";
 
@@ -174,7 +174,11 @@ function Ready({ onReady }: { onReady?: () => void }) {
       } catch {
         // Compiling up front is an optimization; the first frame compiles anyway.
       }
+      // Labels are measured in the page font; a late font swap would resize every pill
+      // after the cross-fade, so wait for it and measure again.
+      await document.fonts.ready;
       if (cancelled) return;
+      for (const slot of rt.labels.values()) measureLabel(rt, slot);
       startCounting(phase);
       invalidate();
     };
@@ -182,7 +186,7 @@ function Ready({ onReady }: { onReady?: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [get, invalidate, phase]);
+  }, [get, invalidate, phase, rt]);
 
   useFrame((state) => {
     const step = countFrame(phase);

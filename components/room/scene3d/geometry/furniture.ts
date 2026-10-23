@@ -11,6 +11,7 @@ import {
   merge,
   METAL,
   paint,
+  PATTERN,
   place,
   post,
   roundedRectShape,
@@ -164,7 +165,8 @@ function wineGlassGeometry(color: string): THREE.BufferGeometry {
     [0.029, 0.152],
     [0.0, 0.11],
   ];
-  return paint(lathe(profile, 16), color, { roughness: 0.12, metalness: 0 });
+  // Merged into the opaque table mesh: the crystal pattern draws it as glass.
+  return paint(lathe(profile, 16), color, { roughness: 0.08, metalness: 0 }, { pattern: PATTERN.crystal });
 }
 
 function votiveGeometry(color: string): THREE.BufferGeometry {

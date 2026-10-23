@@ -69,7 +69,7 @@ function furnitureColors(palette: Palette, bookable: boolean, tierColor: string,
     wood: bookable ? palette.chairWood : palette.chairWoodQuiet,
     upholstery,
     plate: palette.plate,
-    glassware: palette.theme === "dark" ? "#a7b2b6" : "#d9e3e6",
+    glassware: palette.theme === "dark" ? "#a7b2b6" : "#cdd8dc",
     votive: palette.votive,
     outdoor,
   };
@@ -86,6 +86,7 @@ interface LookContext {
   someoneSelected: boolean;
   sitting: boolean;
   ringAlpha: number;
+  ringFill: number;
 }
 
 /** The look a table should settle into for its state (PRD table states). */
@@ -115,7 +116,7 @@ export function targetLook(state: VisualState, c: LookContext): Look {
     ringAlpha: ringed ? (state === "wrong_size" ? 0.7 : c.ringAlpha) * (others ? 0.5 : 1) : 0,
     ringLine: c.selected ? 3.2 : c.hovered ? 2.8 : 2,
     ringHatch: state === "wrong_size" ? 1 : 0,
-    ringFill: c.selected ? 1 : 0,
+    ringFill: c.selected ? c.ringFill : 0,
     ringGlow: c.selected ? 1 : c.hovered ? 0.55 : 0,
     ringBright: c.selected || c.hovered ? 1 : 0,
   };
@@ -340,6 +341,7 @@ export function Tables({ data, placements, palette, shared, reducedMotion, onSha
         someoneSelected: selected != null,
         sitting: sitting != null,
         ringAlpha: palette.ringAlpha,
+        ringFill: palette.ringFill,
       }),
     );
     // `built` changes with the palette: fresh meshes need their shadow flags again.
@@ -354,6 +356,7 @@ export function Tables({ data, placements, palette, shared, reducedMotion, onSha
     data.tables,
     built,
     palette.ringAlpha,
+    palette.ringFill,
     reducedMotion,
     invalidate,
     onShadowsChanged,

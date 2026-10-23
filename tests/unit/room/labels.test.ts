@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   boxRect,
+  fitLabels,
   type LabelBox,
   labelContent,
   labelPriority,
@@ -105,5 +106,42 @@ describe("collision pass", () => {
     ]);
     expect(order.get("W1")!).toBeLessThan(order.get("W2")!);
     expect(order.get("B1")!).toBeLessThan(order.get("W2")!);
+  });
+});
+
+// A row of tables 100 px apart: full pills are 150 px, title-only pills 90 px.
+const row = (compact: boolean) =>
+  [0, 1, 2, 3, 4].map((i) => box(`W${i + 1}`, 100 + i * 100, 200, PRIORITY.available, { width: compact ? 90 : 150 }));
+
+// Two labels on the same spot: no width makes room for both.
+const stacked = (compact: boolean) => [
+  box("A", 100, 100, PRIORITY.available, { width: compact ? 90 : 150 }),
+  box("B", 100, 100, PRIORITY.available),
+];
+
+describe("prices give way before names", () => {
+  const viewport = { width: 800, height: 600 };
+
+  it("keeps full pills when they all fit", () => {
+    const fit = fitLabels(() => [box("A", 100, 100, PRIORITY.available), box("B", 400, 100, PRIORITY.available)], viewport);
+    expect(fit.compact).toBe(false);
+    expect(fit.shown.size).toBe(2);
+  });
+
+  it("drops the prices when that shows more tables", () => {
+    const fit = fitLabels(row, viewport);
+    expect(fit.compact).toBe(true);
+    expect(fit.shown.size).toBe(5);
+    const rects = fit.boxes.filter((b) => fit.shown.has(b.code)).map(boxRect);
+    for (let i = 0; i < rects.length; i++)
+      for (let j = i + 1; j < rects.length; j++) expect(rectsOverlap(rects[i]!, rects[j]!, 6)).toBe(false);
+  });
+
+  it("keeps the prices when dropping them would not help", () => {
+    expect(fitLabels(stacked, viewport).compact).toBe(false);
+  });
+
+  it("decides from the geometry alone", () => {
+    expect(fitLabels(row, viewport)).toEqual(fitLabels(row, viewport));
   });
 });

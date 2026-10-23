@@ -18,6 +18,8 @@ import {
   polarLimits,
   projectAll,
   sitePoints,
+  SIT_FRAME_REACH,
+  sitPitch,
   sitPose,
 } from "@/components/room/scene3d/cameraMath";
 import { planOrientation } from "@/lib/room/orientation";
@@ -77,12 +79,40 @@ describe("Sit here", () => {
         expect(pose.position).toEqual(v.position);
         expect(pose.fov).toBeCloseTo(verticalFovForAspect(aspect), 9);
         const d = distanceOf(pose.position, pose.target);
-        expect((pose.target.x - pose.position.x) / d).toBeCloseTo(v.direction.x, 9);
-        expect((pose.target.y - pose.position.y) / d).toBeCloseTo(v.direction.y, 9);
-        expect((pose.target.z - pose.position.z) / d).toBeCloseTo(v.direction.z, 9);
+        const dx = (pose.target.x - pose.position.x) / d;
+        const dy = (pose.target.y - pose.position.y) / d;
+        const dz = (pose.target.z - pose.position.z) / d;
+        // The yaw is the table's view exactly.
+        const flat = Math.hypot(v.direction.x, v.direction.z);
+        expect(dx / Math.hypot(dx, dz)).toBeCloseTo(v.direction.x / flat, 9);
+        expect(dz / Math.hypot(dx, dz)).toBeCloseTo(v.direction.z / flat, 9);
+        // The pitch is the authored one, or lower so the frame reaches the place setting.
+        const pitch = (Math.asin(dy) * 180) / Math.PI;
+        expect(pitch).toBeCloseTo(sitPitch(v.pitch, aspect), 9);
+        expect(pitch).toBeLessThanOrEqual(v.pitch + 1e-9);
+        expect(pitch - pose.fov / 2).toBeLessThanOrEqual(-SIT_FRAME_REACH + 1e-9);
       }
     },
   );
+
+  it.each(venues.flatMap((v) => v.tables.map((t) => [v.id, t.id, t] as const)))(
+    "%s %s renders on the authored view exactly",
+    (_v, _c, t) => {
+      const pose = sitPose(t, 1.5, { authoredPitch: true });
+      const v = seatView(t);
+      const d = distanceOf(pose.position, pose.target);
+      expect((pose.target.x - pose.position.x) / d).toBeCloseTo(v.direction.x, 9);
+      expect((pose.target.y - pose.position.y) / d).toBeCloseTo(v.direction.y, 9);
+      expect((pose.target.z - pose.position.z) / d).toBeCloseTo(v.direction.z, 9);
+    },
+  );
+
+  it("keeps the authored view on a phone and tips down only as far as needed on a wide screen", () => {
+    expect(sitPitch(-4, 390 / 844)).toBe(-4);
+    const wide = sitPitch(-4, 1.6);
+    expect(wide).toBeLessThan(-4);
+    expect(wide).toBeCloseTo(verticalFovForAspect(1.6) / 2 - SIT_FRAME_REACH, 9);
+  });
 });
 
 describe("frame", () => {

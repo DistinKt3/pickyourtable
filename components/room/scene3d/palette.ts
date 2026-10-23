@@ -72,6 +72,8 @@ export interface Palette {
   contactShadow: number;
   ao: { intensity: number; color: string };
   ringAlpha: number;
+  /** How strongly the selected ring tints the floor inside it (a pale veil reads as haze on a dark floor). */
+  ringFill: number;
   /** Exposure before tone mapping. */
   exposure: number;
   /** The look after tone mapping. */
@@ -140,6 +142,7 @@ export const LIGHT: Palette = {
   contactShadow: 0.85,
   ao: { intensity: 3, color: "#2a2018" },
   ringAlpha: 0.95,
+  ringFill: 1,
   exposure: 1.5,
   post: { contrast: 0.14, saturation: 0.16 },
 };
@@ -192,8 +195,8 @@ export const DUSK: Palette = {
   sky: { zenith: "#10172a", horizon: "#4b3f40", haze: "#2c2a2b", far: "#22232a" },
   light: {
     hemiSky: "#56617d",
-    hemiGround: "#2c2620",
-    hemi: 0.85,
+    hemiGround: "#54463a",
+    hemi: 0.95,
     key: "#ffe8d0",
     keyIntensity: 1.8,
     keyElevation: 64,
@@ -204,8 +207,9 @@ export const DUSK: Palette = {
     interiorIntensity: 0.9,
   },
   contactShadow: 0.9,
-  ao: { intensity: 2.6, color: "#000000" },
+  ao: { intensity: 2.2, color: "#0e0b08" },
   ringAlpha: 1,
+  ringFill: 0.25,
   exposure: 1.35,
   post: { contrast: 0.1, saturation: 0.04 },
 };

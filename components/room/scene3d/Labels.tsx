@@ -8,7 +8,7 @@ import { useRoom } from "@/lib/room/store";
 import { type RoomData, type RoomTable, tierOf, visualState } from "@/lib/room/types";
 import { labelAnchor, type Vec3 } from "@/lib/venue/geometry";
 import { distanceOf } from "./cameraMath";
-import { type LabelBox, labelContent, labelPriority, PRIORITY, resolveLabels, roundRobinOrder } from "./labelsLayout";
+import { fitLabels, type LabelBox, labelContent, labelPriority, PRIORITY, roundRobinOrder } from "./labelsLayout";
 import type { Theme } from "./palette";
 import { measureLabel, registerLabel, type LabelSlot, type Runtime, setFocused, useRuntime } from "./runtime";
 
@@ -29,15 +29,28 @@ function TableLabel({ table, data, theme, rt }: { table: RoomTable; data: RoomDa
   const content = labelContent(table, tier, state, a);
   const button = useRef<HTMLButtonElement>(null);
   const pill = useRef<HTMLSpanElement>(null);
+  const price = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const b = button.current;
     const p = pill.current;
     if (!b || !p) return;
-    const slot: LabelSlot = { button: b, pill: p, width: p.offsetWidth, height: p.offsetHeight, shown: false };
+    const slot: LabelSlot = {
+      button: b,
+      pill: p,
+      price,
+      baseWidth: 0,
+      priceWidth: 0,
+      height: 0,
+      shown: false,
+      compact: false,
+    };
+    measureLabel(rt, slot);
     const unregister = registerLabel(rt, table.id, slot);
+    // The price is watched too: it can change while hidden without resizing the pill.
     const ro = new ResizeObserver(() => measureLabel(rt, slot));
     ro.observe(p);
+    if (price.current) ro.observe(price.current);
     return () => {
       ro.disconnect();
       unregister();
@@ -52,6 +65,7 @@ function TableLabel({ table, data, theme, rt }: { table: RoomTable; data: RoomDa
       aria-label={content.accessibleName}
       aria-pressed={isSelected}
       data-show="false"
+      data-compact="false"
       data-code={table.id}
       className={cx(
         "group pointer-events-auto absolute top-0 left-0 flex min-h-11 min-w-11 items-center justify-center p-2 opacity-100 outline-none",
@@ -90,9 +104,17 @@ function TableLabel({ table, data, theme, rt }: { table: RoomTable; data: RoomDa
           />
         ) : null}
         <span>{content.title}</span>
-        {content.price ? (
-          <span className={cx(isSelected ? "text-surface-3" : "text-ink-3", "font-normal")}>{content.price}</span>
-        ) : null}
+        {/* When the plan is crowded the prices give way so every table keeps its name;
+            the selected table keeps its price, and the accessible name always has it. */}
+        <span
+          ref={price}
+          className={cx(
+            "font-normal empty:hidden",
+            isSelected ? "text-surface-3" : "text-ink-3 group-data-[compact=true]:invisible group-data-[compact=true]:absolute",
+          )}
+        >
+          {content.price}
+        </span>
       </span>
     </button>
   );
@@ -131,56 +153,91 @@ function projectLabels(
   const far = distance > rt.overviewDistance * 1.12;
   // Tables seated by the host only get a label once the guest has zoomed in.
   const close = distance < rt.overviewDistance * 0.62;
-  const boxes: LabelBox[] = [];
+  const edge = 8;
+  const items: Projected[] = [];
   data.tables.forEach((t, i) => {
     const slot = rt.labels.get(t.id);
     if (!slot) return;
     const a = anchors[i]!;
     v.set(a.x, a.y + (rt.lift.get(t.id) ?? 0), a.z).project(camera);
-    const x = ((v.x + 1) / 2) * size.width;
-    // The pill floats just above its table, so the table itself stays in view.
-    const y = ((1 - v.y) / 2) * size.height - slot.height / 2 - 6;
+    const ax = ((v.x + 1) / 2) * size.width;
+    const ay = ((1 - v.y) / 2) * size.height;
+    // The table must be on screen; its pill may slide inward to stay whole.
+    const anchorOff = v.z > 1 || ax < 0 || ax > size.width || ay < 0 || ay > size.height;
+    const isSelected = st.selected === t.id;
     const state = visualState(t, st.availability?.[t.id]);
-    let priority = labelPriority(state, { selected: st.selected === t.id, hovered: st.hovered === t.id });
+    let priority = labelPriority(state, { selected: isSelected, hovered: st.hovered === t.id });
     // Zoomed far out, only the selected, hovered and available tables compete for room.
     if (far && priority < PRIORITY.available) priority = -1;
     if (!close && priority === PRIORITY.quiet) priority = -1;
-    const depth = camera.position.distanceTo(v.set(a.x, a.y, a.z));
-    boxes.push({
+    const full = slot.baseWidth + slot.priceWidth;
+    items.push({
       code: t.id,
+      group: `${priority}:${t.tier}`,
       priority,
-      x,
-      y,
-      width: slot.width,
+      ax,
+      // The pill floats just above its table, so the table itself stays in view.
+      y: Math.max(slot.height / 2 + edge, ay - slot.height / 2 - 6),
+      full,
+      small: isSelected ? full : slot.baseWidth,
       height: slot.height,
-      offscreen: hideAll || priority < 0 || !Number.isFinite(x),
+      offscreen: hideAll || priority < 0 || anchorOff || !Number.isFinite(ax),
       forced: rt.focused === t.id,
-      depth,
+      depth: camera.position.distanceTo(v.set(a.x, a.y, a.z)),
     });
-    // The button is the pill plus 8 px of hit area on every side, at least 44 px.
-    const bw = Math.max(44, slot.width + 16);
-    const bh = Math.max(44, slot.height + 16);
-    slot.button.style.transform = `translate3d(${Math.round(x - bw / 2)}px, ${Math.round(y - bh / 2)}px, 0)`;
   });
-  const order = roundRobinOrder(
-    boxes.map((b) => ({
-      code: b.code,
-      group: `${b.priority}:${data.tables.find((x) => x.id === b.code)!.tier}`,
-      x: b.x,
-      y: b.y,
-    })),
+  const order = roundRobinOrder(items.map((b) => ({ code: b.code, group: b.group, x: b.ax, y: b.y })));
+  const fit = fitLabels(
+    (compact) =>
+      items.map((it): LabelBox => {
+        const width = compact ? it.small : it.full;
+        return {
+          code: it.code,
+          priority: it.priority,
+          x: Math.min(size.width - width / 2 - edge, Math.max(width / 2 + edge, it.ax)),
+          y: it.y,
+          width,
+          height: it.height,
+          offscreen: it.offscreen,
+          forced: it.forced,
+          depth: it.depth,
+          order: order.get(it.code) ?? 0,
+        };
+      }),
+    size,
   );
-  for (const b of boxes) b.order = order.get(b.code) ?? 0;
-  const shown = resolveLabels(boxes, size);
-  for (const b of boxes) {
+  for (const b of fit.boxes) {
     const slot = rt.labels.get(b.code)!;
-    const show = shown.has(b.code);
+    // The button is the pill plus 8 px of hit area on every side, at least 44 px.
+    const bw = Math.max(44, b.width + 16);
+    const bh = Math.max(44, b.height + 16);
+    slot.button.style.transform = `translate3d(${Math.round(b.x - bw / 2)}px, ${Math.round(b.y - bh / 2)}px, 0)`;
+    const show = fit.shown.has(b.code);
     if (show !== slot.shown || rt.labelsDirty) {
       slot.shown = show;
       slot.button.dataset.show = show ? "true" : "false";
     }
+    if (fit.compact !== slot.compact || rt.labelsDirty) {
+      slot.compact = fit.compact;
+      slot.button.dataset.compact = fit.compact ? "true" : "false";
+    }
   }
   rt.labelsDirty = false;
+}
+
+/** One table's label after projection, before the full or compact width is chosen. */
+interface Projected {
+  code: string;
+  group: string;
+  priority: number;
+  ax: number;
+  y: number;
+  full: number;
+  small: number;
+  height: number;
+  offscreen: boolean;
+  forced: boolean;
+  depth: number;
 }
 
 /** Inside the canvas: runs the label pass after the camera has moved, every rendered frame. */

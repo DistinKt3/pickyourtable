@@ -54,7 +54,8 @@ float pytGroove(float coord, float halfWidth) {
 }
 float pytTone(vec2 cell) { return pytHash(cell) - 0.5; }
 vec3 pytPattern(vec3 base, float kind, vec3 wp) {
-  if (kind < 0.5) return base;
+  // 0 is plain; 8 (glassware) is shaded after lighting instead.
+  if (kind < 0.5 || kind > 7.5) return base;
   vec2 p = wp.xz;
   float shade = 0.0;
   if (kind < 1.5 || (kind > 4.5 && kind < 5.5)) {
@@ -171,6 +172,18 @@ metalnessFactor = vPbr.y;`,
 totalEmissiveRadiance += diffuseColor.rgb * vPbr.z * uGlow;
 vec2 inRect = step(uInteriorRect.xy, vClayWorld.xz) * step(vClayWorld.xz, uInteriorRect.zw);
 totalEmissiveRadiance += diffuseColor.rgb * uInteriorColor * uInteriorStrength * inRect.x * inRect.y;`,
+      )
+      .replace(
+        "#include <opaque_fragment>",
+        `#include <opaque_fragment>
+if (vPattern > 7.5) {
+  // Glassware inside an opaque mesh: edges that darken where the glass refracts, and
+  // one bright vertical streak, the way glass is drawn in an architectural model.
+  float glassFacing = abs(dot(normalize(vViewPosition), normal));
+  gl_FragColor.rgb *= 1.0 - 0.5 * pow(1.0 - glassFacing, 1.5);
+  float glassStreak = smoothstep(0.38, 0.5, normal.x) * (1.0 - smoothstep(0.58, 0.7, normal.x));
+  gl_FragColor.rgb += glassStreak * 0.35;
+}`,
       );
   };
   m.customProgramCacheKey = () => (m.transparent ? "pyt-clay-t" : "pyt-clay");

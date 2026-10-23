@@ -1,6 +1,6 @@
 "use client";
 
-import { BrightnessContrast, EffectComposer, HueSaturation, N8AO, SMAA, ToneMapping } from "@react-three/postprocessing";
+import { BrightnessContrast, EffectComposer, FXAA, HueSaturation, N8AO, ToneMapping } from "@react-three/postprocessing";
 import { useThree } from "@react-three/fiber";
 import { BlendFunction, Effect, ToneMappingMode } from "postprocessing";
 import { useEffect, useMemo } from "react";
@@ -77,7 +77,8 @@ export function Effects({ background, look, quality, aoIntensity, aoColor, rende
       <BrightnessContrast brightness={0.02} contrast={look.contrast} />
       <HueSaturation saturation={look.saturation} />
       <primitive object={backdrop} />
-      {!render && quality < 2 ? <SMAA /> : <></>}
+      {/* Without multisampling, FXAA: far lighter to ship than SMAA and its lookup images. */}
+      {!render && quality < 2 ? <FXAA /> : <></>}
     </EffectComposer>
   );
 }

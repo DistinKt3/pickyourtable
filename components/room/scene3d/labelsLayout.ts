@@ -122,6 +122,34 @@ export function resolveLabels(boxes: LabelBox[], viewport: { width: number; heig
   return shown;
 }
 
+export interface LabelFit {
+  /** Title-only pills: the prices gave way so more tables keep their names. */
+  compact: boolean;
+  boxes: LabelBox[];
+  shown: Set<string>;
+}
+
+/**
+ * Prices give way before names do. Lays the labels out in full; when that hides any,
+ * lays them out again as title-only pills and keeps whichever shows more. The choice
+ * depends only on the geometry, so it cannot flicker between frames.
+ */
+export function fitLabels(
+  build: (compact: boolean) => LabelBox[],
+  viewport: { width: number; height: number },
+  gap = 6,
+): LabelFit {
+  const full = build(false);
+  const fullShown = resolveLabels(full, viewport, gap);
+  const candidates = full.filter((b) => !b.offscreen).length;
+  if (fullShown.size >= candidates) return { compact: false, boxes: full, shown: fullShown };
+  const compact = build(true);
+  const compactShown = resolveLabels(compact, viewport, gap);
+  return compactShown.size > fullShown.size
+    ? { compact: true, boxes: compact, shown: compactShown }
+    : { compact: false, boxes: full, shown: fullShown };
+}
+
 /**
  * Fair order inside a priority: the first table of every tier, then the second of
  * every tier, and so on, each tier walked across the screen. When not every label

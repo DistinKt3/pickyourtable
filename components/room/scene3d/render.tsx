@@ -34,7 +34,8 @@ declare global {
 function placeCamera(camera: THREE.PerspectiveCamera, data: RoomData, code: string) {
   const table = data.venue.tables.find((t) => t.id === code);
   if (!table) return;
-  const pose = sitPose(table, SEAT_VIEW_ASPECT);
+  // The render is the photo standard: the table's authored yaw and pitch, untouched.
+  const pose = sitPose(table, SEAT_VIEW_ASPECT, { authoredPitch: true });
   camera.position.set(pose.position.x, pose.position.y, pose.position.z);
   camera.lookAt(pose.target.x, pose.target.y, pose.target.z);
   camera.fov = seatViewFov.vertical;

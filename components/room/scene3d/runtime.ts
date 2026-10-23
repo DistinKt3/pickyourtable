@@ -12,10 +12,19 @@ import type { Theme } from "./palette";
 export interface LabelSlot {
   button: HTMLButtonElement;
   pill: HTMLElement;
-  width: number;
+  /** The price inside the pill (empty and not displayed when the table has none). */
+  price: { current: HTMLElement | null };
+  /** The pill's width without its price. */
+  baseWidth: number;
+  /** What the price adds to the pill (its width plus the gap), 0 without one. */
+  priceWidth: number;
   height: number;
   shown: boolean;
+  compact: boolean;
 }
+
+/** The flex gap between the pill's parts (gap-1.5). */
+const PILL_GAP = 6;
 
 export interface Runtime {
   /** 0 in the diorama, 1 seated ("Sit here"), animated in between. */
@@ -122,7 +131,13 @@ export function registerLabel(rt: Runtime, code: string, slot: LabelSlot): () =>
 }
 
 export function measureLabel(rt: Runtime, slot: LabelSlot): void {
-  slot.width = slot.pill.offsetWidth;
+  // A compact pill keeps its price laid out but hidden and out of flow, so both
+  // widths stay measurable whichever way the pill is showing.
+  const price = slot.price.current;
+  const priceWidth = price && price.offsetWidth > 0 ? price.offsetWidth + PILL_GAP : 0;
+  const inFlow = priceWidth > 0 && getComputedStyle(price!).position !== "absolute";
+  slot.priceWidth = priceWidth;
+  slot.baseWidth = slot.pill.offsetWidth - (inFlow ? priceWidth : 0);
   slot.height = slot.pill.offsetHeight;
   rt.labelsDirty = true;
   rt.invalidate();

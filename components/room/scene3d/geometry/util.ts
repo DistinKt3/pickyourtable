@@ -22,7 +22,17 @@ export const STEEL: Surface = { roughness: 0.4, metalness: 0.12 };
 export const GLAZE: Surface = { roughness: 0.3, metalness: 0 };
 
 /** Procedural surface patterns drawn by the clay shader in world space. */
-export const PATTERN = { none: 0, planks: 1, tiles: 2, pavers: 3, lawn: 4, boards: 5, wallTiles: 6, flutes: 7 } as const;
+export const PATTERN = {
+  none: 0,
+  planks: 1,
+  tiles: 2,
+  pavers: 3,
+  lawn: 4,
+  boards: 5,
+  wallTiles: 6,
+  flutes: 7,
+  crystal: 8,
+} as const;
 
 export type Rise =
   /** Never moves. */

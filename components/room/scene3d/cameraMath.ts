@@ -296,13 +296,33 @@ export function framePose(table: VenueTable, aspect: number, currentBearing: num
   return { position: orbitPosition(target, currentBearing, pitch, hi), target, fov: ORBIT_FOV, screenY };
 }
 
-/** "Sit here": the eye at 1.15 m over the main seat, facing the table's view, with the 26 mm lens. */
-export function sitPose(table: VenueTable, aspect: number): Pose {
+/**
+ * How far below level the bottom of a seated frame reaches, at least, in degrees: far
+ * enough to keep the guest's own place setting in view.
+ */
+export const SIT_FRAME_REACH = 34;
+
+/**
+ * The seated pitch: the table's authored view pitch, tipped down on a wide screen
+ * (whose 26 mm frame is shorter) until the frame reaches the place setting.
+ */
+export function sitPitch(viewPitch: number, aspect: number): number {
+  const half = verticalFovForAspect(aspect) / 2;
+  return Math.min(viewPitch, half - SIT_FRAME_REACH);
+}
+
+/**
+ * "Sit here": the eye at 1.15 m over the main seat, facing the table's view, with the
+ * 26 mm lens. Seat renders pass `authoredPitch` so they match the photo standard exactly.
+ */
+export function sitPose(table: VenueTable, aspect: number, opts: { authoredPitch?: boolean } = {}): Pose {
   const v = seatView(table);
+  const f = bearing(v.yaw);
+  const p = rad(opts.authoredPitch ? v.pitch : sitPitch(v.pitch, aspect));
   const target = {
-    x: v.position.x + v.direction.x * SIT_LOOK_DISTANCE,
-    y: v.position.y + v.direction.y * SIT_LOOK_DISTANCE,
-    z: v.position.z + v.direction.z * SIT_LOOK_DISTANCE,
+    x: v.position.x + f.x * Math.cos(p) * SIT_LOOK_DISTANCE,
+    y: v.position.y + Math.sin(p) * SIT_LOOK_DISTANCE,
+    z: v.position.z + f.z * Math.cos(p) * SIT_LOOK_DISTANCE,
   };
   return { position: { ...v.position }, target, fov: verticalFovForAspect(aspect), screenY: 0 };
 }
