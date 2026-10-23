@@ -1,0 +1,215 @@
+{
+  "venue": "orchard-room",
+  "venueSha256": "7e54892ab7f814bfce866f0d30b68c575fd5f109a60fb9741ffe5526bc88cb64",
+  "camera": {
+    "eyeHeightM": 1.15,
+    "focalMm": 26,
+    "aspect": "3:2"
+  },
+  "capture": {
+    "width": 2880,
+    "height": 1920
+  },
+  "tables": {
+    "G1": {
+      "label": "Garden 1",
+      "files": {
+        "G1-640.avif": {
+          "bytes": 5034
+        },
+        "G1-640.webp": {
+          "bytes": 6876
+        },
+        "G1-1280.avif": {
+          "bytes": 9309
+        },
+        "G1-1280.webp": {
+          "bytes": 15212
+        },
+        "G1-email.jpg": {
+          "bytes": 11357
+        }
+      }
+    },
+    "G2": {
+      "label": "Garden 2",
+      "files": {
+        "G2-640.avif": {
+          "bytes": 4667
+        },
+        "G2-640.webp": {
+          "bytes": 6466
+        },
+        "G2-1280.avif": {
+          "bytes": 8750
+        },
+        "G2-1280.webp": {
+          "bytes": 14540
+        },
+        "G2-email.jpg": {
+          "bytes": 10781
+        }
+      }
+    },
+    "G3": {
+      "label": "Garden 3",
+      "files": {
+        "G3-640.avif": {
+          "bytes": 5501
+        },
+        "G3-640.webp": {
+          "bytes": 8050
+        },
+        "G3-1280.avif": {
+          "bytes": 10651
+        },
+        "G3-1280.webp": {
+          "bytes": 17716
+        },
+        "G3-email.jpg": {
+          "bytes": 13353
+        }
+      }
+    },
+    "G4": {
+      "label": "Garden 4",
+      "files": {
+        "G4-640.avif": {
+          "bytes": 5081
+        },
+        "G4-640.webp": {
+          "bytes": 7276
+        },
+        "G4-1280.avif": {
+          "bytes": 9647
+        },
+        "G4-1280.webp": {
+          "bytes": 15736
+        },
+        "G4-email.jpg": {
+          "bytes": 11093
+        }
+      }
+    },
+    "K1": {
+      "label": "Bar 1",
+      "files": {
+        "K1-640.avif": {
+          "bytes": 6977
+        },
+        "K1-640.webp": {
+          "bytes": 10944
+        },
+        "K1-1280.avif": {
+          "bytes": 13832
+        },
+        "K1-1280.webp": {
+          "bytes": 22104
+        },
+        "K1-email.jpg": {
+          "bytes": 19125
+        }
+      }
+    },
+    "K2": {
+      "label": "Bar 2",
+      "files": {
+        "K2-640.avif": {
+          "bytes": 8256
+        },
+        "K2-640.webp": {
+          "bytes": 12738
+        },
+        "K2-1280.avif": {
+          "bytes": 16305
+        },
+        "K2-1280.webp": {
+          "bytes": 25754
+        },
+        "K2-email.jpg": {
+          "bytes": 21734
+        }
+      }
+    },
+    "K3": {
+      "label": "Bar 3",
+      "files": {
+        "K3-640.avif": {
+          "bytes": 8517
+        },
+        "K3-640.webp": {
+          "bytes": 13868
+        },
+        "K3-1280.avif": {
+          "bytes": 17151
+        },
+        "K3-1280.webp": {
+          "bytes": 27236
+        },
+        "K3-email.jpg": {
+          "bytes": 22288
+        }
+      }
+    },
+    "N1": {
+      "label": "Banquette 1",
+      "files": {
+        "N1-640.avif": {
+          "bytes": 12898
+        },
+        "N1-640.webp": {
+          "bytes": 21116
+        },
+        "N1-1280.avif": {
+          "bytes": 26413
+        },
+        "N1-1280.webp": {
+          "bytes": 44014
+        },
+        "N1-email.jpg": {
+          "bytes": 23244
+        }
+      }
+    },
+    "N2": {
+      "label": "Banquette 2",
+      "files": {
+        "N2-640.avif": {
+          "bytes": 12436
+        },
+        "N2-640.webp": {
+          "bytes": 20146
+        },
+        "N2-1280.avif": {
+          "bytes": 24748
+        },
+        "N2-1280.webp": {
+          "bytes": 40776
+        },
+        "N2-email.jpg": {
+          "bytes": 22474
+        }
+      }
+    },
+    "N3": {
+      "label": "Banquette 3",
+      "files": {
+        "N3-640.avif": {
+          "bytes": 10795
+        },
+        "N3-640.webp": {
+          "bytes": 17476
+        },
+        "N3-1280.avif": {
+          "bytes": 21412
+        },
+        "N3-1280.webp": {
+          "bytes": 35884
+        },
+        "N3-email.jpg": {
+          "bytes": 21495
+        }
+      }
+    }
+  }
+}
