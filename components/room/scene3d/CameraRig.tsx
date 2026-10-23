@@ -37,6 +37,8 @@ export function CameraRig({ venue, reducedMotion }: { venue: Venue; reducedMotio
     () =>
       useRoom.subscribe((s, prev) => {
         if (s.camera.id !== prev.camera.id) director.go(s.camera, false);
+        // The card's height settles after it opens: frame the table again above it.
+        else if (s.frameInset !== prev.frameInset && s.camera.kind === "frame") director.go(s.camera, false);
       }),
     [director],
   );

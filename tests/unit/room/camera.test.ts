@@ -16,6 +16,7 @@ import {
   PITCH_MIN,
   pitchOf,
   polarLimits,
+  frameRadius,
   projectAll,
   sitePoints,
   SIT_FRAME_REACH,
@@ -116,6 +117,25 @@ describe("Sit here", () => {
 });
 
 describe("frame", () => {
+  it("keeps the table and its neighbors above a tall card", () => {
+    const venue = venues[0]!;
+    const aspect = 390 / 588; // a phone's room view under the header
+    const cover = 0.7; // the card covers the bottom 70%
+    for (const t of venue.tables) {
+      const pose = framePose(t, aspect, 0, 50, cover);
+      const r = frameRadius(t);
+      const disc = Array.from({ length: 24 }, (_, i) => {
+        const a = (i / 24) * Math.PI * 2;
+        return { x: t.x + Math.cos(a) * r, y: 0, z: t.z + Math.sin(a) * r };
+      });
+      for (const p of projectAll(disc, pose.position, pose.target, pose.fov, aspect)) {
+        // On screen, with the view offset applied: below the top edge, above the card.
+        expect(p.y + pose.screenY).toBeLessThan(1);
+        expect(p.y + pose.screenY).toBeGreaterThan(-1 + 2 * cover);
+      }
+    }
+  });
+
   it.each(ASPECTS)("keeps the table in the clear part of the screen at aspect %f", (aspect) => {
     const venue = venues[0]!;
     for (const t of venue.tables) {

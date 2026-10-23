@@ -40,7 +40,7 @@ test("capture the device matrix", async ({ browser }, info) => {
       });
       const page = await ctx.newPage();
       const shot = async (state: string) => {
-        await page.waitForTimeout(700);
+        await settle(page);
         await page.screenshot({ path: `${OUT}/${d.name}-${scheme}-${state}.png` });
       };
       await page.goto("/v/halcyon?room=3d");
@@ -64,4 +64,30 @@ async function waitFor3d(page: Page) {
       timeout: 120_000,
     })
     .catch(() => undefined);
+}
+
+/**
+ * Waits until what a person would see has stopped changing: every visible image has
+ * painted, and (with the 3D room up) the camera has held still for 1.5 s, so the labels
+ * and the canvas show the same pose. A software GPU draws seconds apart.
+ */
+async function settle(page: Page) {
+  await page.waitForFunction(
+    () => [...document.images].every((i) => i.getBoundingClientRect().width === 0 || (i.complete && i.naturalWidth > 0)),
+    null,
+    { timeout: 60_000 },
+  );
+  const pose = () =>
+    page.evaluate(() => {
+      const scene = (window as unknown as { __pytScene?: { camera(): { position: unknown; target: unknown } } }).__pytScene;
+      return scene ? JSON.stringify(scene.camera()) : "";
+    });
+  let last = await pose();
+  for (let i = 0; i < 40; i++) {
+    await page.waitForTimeout(1500);
+    const now = await pose();
+    if (now === last) break;
+    last = now;
+  }
+  await page.waitForTimeout(1500);
 }

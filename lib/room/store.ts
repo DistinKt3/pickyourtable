@@ -37,6 +37,8 @@ export interface RoomStore {
   sitting: string | null;
   camera: CameraIntent;
   reducedMotion: boolean;
+  /** CSS pixels at the bottom of the room that the table card covers; framing keeps the table above them. */
+  frameInset: number;
 
   setView: (view: RoomStore["view"]) => void;
   setRenderer: (r: RendererKind) => void;
@@ -50,6 +52,7 @@ export interface RoomStore {
   standUp: () => void;
   overview: () => void;
   setReducedMotion: (v: boolean) => void;
+  setFrameInset: (px: number) => void;
 }
 
 let intentId = 0;
@@ -66,6 +69,7 @@ export const useRoom = create<RoomStore>()((set, get) => ({
   sitting: null,
   camera: { kind: "overview", id: 0 },
   reducedMotion: false,
+  frameInset: 0,
 
   setView: (view) => set({ view }),
   setRenderer: (renderer) => set({ renderer }),
@@ -88,4 +92,8 @@ export const useRoom = create<RoomStore>()((set, get) => ({
   },
   overview: () => set({ camera: { kind: "overview", id: next() } }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+  setFrameInset: (px) => {
+    const frameInset = Math.max(0, Math.round(px));
+    if (get().frameInset !== frameInset) set({ frameInset });
+  },
 }));

@@ -69,6 +69,9 @@ export function RoomView({ data, bottomInset }: { data: RoomData; bottomInset: n
   const renderer = useRoom((s) => s.renderer);
   const views = useMemo(() => guestPlanViews(data.venue, data.tables, availability), [data, availability]);
 
+  // The 3D camera frames the selected table above the card, as the plan does.
+  useEffect(() => useRoom.getState().setFrameInset(bottomInset), [bottomInset]);
+
   const [want3d, setWant3d] = useState(false);
   const [ready3d, setReady3d] = useState(false);
 

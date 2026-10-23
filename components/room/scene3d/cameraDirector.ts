@@ -1,6 +1,6 @@
 import type CameraControlsImpl from "camera-controls";
 import * as THREE from "three";
-import type { CameraIntent } from "@/lib/room/store";
+import { type CameraIntent, useRoom } from "@/lib/room/store";
 import type { Venue } from "@/lib/venue/schema";
 import {
   bearingOf,
@@ -141,7 +141,7 @@ export class CameraDirector {
         const d = defaultPose(venue, aspect);
         const b = fromSeat ? d.bearing : bearingOf(now.position, now.target);
         const p = fromSeat ? d.pitch : pitchOf(now.position, now.target);
-        return framePose(t, aspect, b, p);
+        return framePose(t, aspect, b, p, useRoom.getState().frameInset / Math.max(1, this.ctx!.size.height));
       }
     }
     return defaultPose(venue, aspect);

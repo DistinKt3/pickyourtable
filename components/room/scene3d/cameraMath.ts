@@ -250,8 +250,15 @@ export function targetBounds(venue: Venue): { min: Vec3; max: Vec3 } {
 }
 
 /** The visible band of the screen when a table is selected: portrait phones lose the bottom 45% to the card. */
-export function frameRegion(aspect: number): { top: number; bottom: number; side: number } {
-  return aspect < PORTRAIT_ASPECT ? { top: 0.1, bottom: 0.47, side: 0.06 } : { top: 0.13, bottom: 0.14, side: 0.1 };
+/**
+ * The part of the screen a framed table must stay in, as fractions of each edge. `cover`
+ * is the fraction of the height the table card covers from the bottom: the region
+ * always ends a little above it.
+ */
+export function frameRegion(aspect: number, cover = 0): { top: number; bottom: number; side: number } {
+  const base = aspect < PORTRAIT_ASPECT ? { top: 0.1, bottom: 0.47, side: 0.06 } : { top: 0.13, bottom: 0.14, side: 0.1 };
+  const clear = Math.min(0.85, Math.max(0, cover) + 0.04);
+  return { ...base, bottom: Math.max(base.bottom, clear), top: Math.min(base.top, (1 - clear) / 4) };
 }
 
 /** Radius around a table that `frame` keeps in view, so its neighbors show too. */
@@ -266,10 +273,10 @@ export function frameRadius(table: VenueTable): number {
  * is kept, the pitch is eased into a comfortable band, and the table lands in the
  * middle of the part of the screen the card leaves clear.
  */
-export function framePose(table: VenueTable, aspect: number, currentBearing: number, currentPitch: number): Pose {
+export function framePose(table: VenueTable, aspect: number, currentBearing: number, currentPitch: number, cover = 0): Pose {
   const target: Vec3 = { x: table.x, y: 0.35, z: table.z };
   const pitch = Math.min(60, Math.max(42, currentPitch));
-  const region = frameRegion(aspect);
+  const region = frameRegion(aspect, cover);
   const yT = 1 - 2 * region.top;
   const yB = -1 + 2 * region.bottom;
   const screenY = (yT + yB) / 2;
