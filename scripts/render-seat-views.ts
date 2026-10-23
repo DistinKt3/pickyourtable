@@ -92,6 +92,18 @@ async function main() {
       const bookable = venue.tables.filter((t) => t.bookable ?? tierOf(venue, t.tier).bookable);
       const todo = codesArg.length ? bookable.filter((t) => codesArg.includes(t.id)) : bookable;
       const tables: Record<string, unknown> = codesArg.length ? { ...previous.tables } : {};
+      // Written after every table, so an interrupted run keeps what it finished and can
+      // resume with the remaining codes.
+      const writeManifest = async () => {
+        const manifest = {
+          venue: id,
+          venueSha256: createHash("sha256").update(json).digest("hex"),
+          camera: { eyeHeightM: EYE_HEIGHT, focalMm: SEAT_VIEW_FOCAL_MM, aspect: "3:2" },
+          capture: { width: VIEWPORT.width * SCALE, height: VIEWPORT.height * SCALE },
+          tables: Object.fromEntries(Object.entries(tables).sort(([a], [b]) => (a < b ? -1 : 1))),
+        };
+        await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+      };
       for (const t of todo) {
         const started = Date.now();
         const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: SCALE, colorScheme: "light" });
@@ -111,16 +123,10 @@ async function main() {
           failed = true;
         }
         tables[t.id] = { label: t.label, files };
+        await writeManifest();
         console.log(JSON.stringify({ event: "render.seat", venue: id, table: t.id, ms: Date.now() - started, bytes640: small }));
       }
-      const manifest = {
-        venue: id,
-        venueSha256: createHash("sha256").update(json).digest("hex"),
-        camera: { eyeHeightM: EYE_HEIGHT, focalMm: SEAT_VIEW_FOCAL_MM, aspect: "3:2" },
-        capture: { width: VIEWPORT.width * SCALE, height: VIEWPORT.height * SCALE },
-        tables: Object.fromEntries(Object.entries(tables).sort(([a], [b]) => (a < b ? -1 : 1))),
-      };
-      await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+      await writeManifest();
     }
   } finally {
     await browser.close();
