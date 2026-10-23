@@ -39,7 +39,6 @@ export function TableCard({
   const availability = useRoom((s) => s.availability);
   const slot = useRoom((s) => s.slot);
   const select = useRoom((s) => s.select);
-  const reducedMotion = useRoom((s) => s.reducedMotion);
   const rawNotice = useBooking((s) => s.notice);
   const table = data.tables.find((t) => t.id === selected) ?? null;
   const notice =
@@ -64,12 +63,14 @@ export function TableCard({
   const scroller = useRef<HTMLDivElement>(null);
 
   // Follow the selection made elsewhere (a tap in the room, the list, a suggestion).
+  // Jump, don't animate: an animated scroll passes other cards on the way, and a
+  // pause mid-animation would let the swipe handler select one of them.
   useEffect(() => {
     const el = scroller.current;
     if (!el) return;
     const target = index * el.clientWidth;
-    if (Math.abs(el.scrollLeft - target) > 2) el.scrollTo({ left: target, behavior: reducedMotion ? "auto" : "smooth" });
-  }, [index, reducedMotion]);
+    if (Math.abs(el.scrollLeft - target) > 2) el.scrollTo({ left: target, behavior: "instant" });
+  }, [index]);
 
   // A swipe settles on a slide; select it. The listener is attached once and reads
   // the latest deck from a ref: re-attaching it on every availability refresh would
