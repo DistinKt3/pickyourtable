@@ -4,6 +4,8 @@
 
 **Recommendation: invest further.** Every check that can run here passes, each with its proof. The gate is not complete until four more things run: the device matrix with on-device frame rate, the demo on a real phone, usability with five people, and an outside design review. Money reconciliation also needs one run in Stripe test mode. Stop if on-device frame rate or usability fails.
 
+**Last full run on the final build:** 356 Vitest tests pass (unit and integration, against Postgres). All 33 Playwright tests that apply pass across four projects: phone and desktop with WebGL off, and phone and desktop in the 3D room. The other 19 are limited by design to one size or one project. CI runs typecheck, lint, format, the audit, gitleaks, Vitest and the build on every push.
+
 The PRD's gate has eight checks. Every check that a machine can run was run here, and each result below names its proof. Four checks need people, real devices or a live Stripe account, and this environment has none of those. They are marked **not run** with what they need. Under the PRD's own rule, the gate is only complete when they pass.
 
 ## The gate
