@@ -67,7 +67,7 @@ export function layout(
   opts: { subject: string; preheader: string; body: string; image?: { src: string; alt: string } | null },
 ): string {
   const image = opts.image
-    ? `<tr><td style="padding:0;line-height:0;"><img src="${esc(opts.image.src)}" width="600" alt="${esc(opts.image.alt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></td></tr>`
+    ? `<tr><td style="padding:0;line-height:0;"><img src="${esc(opts.image.src)}" width="600" height="400" alt="${esc(opts.image.alt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></td></tr>`
     : "";
   const demo = v.demo
     ? `<p style="margin:12px 0 0;font-family:${SANS};font-size:13px;color:${INK_3};">Demo venue. No real table or payment is involved.</p>`
