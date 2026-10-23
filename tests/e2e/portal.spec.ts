@@ -1,6 +1,6 @@
 import { AxeBuilder } from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
-import { addDays, expectBodyText16, formatTimeLabel, nextWeekday, pickSlot, query, tapTable } from "./helpers";
+import { expect, test } from "@playwright/test";
+import { addDays, expectBodyText16, formatTimeLabel, nextWeekday, pickSlot, signIn, tapTable } from "./helpers";
 
 /**
  * The operator side of the M3 gate: a host signs in through the real magic link (read
@@ -12,30 +12,6 @@ import { addDays, expectBodyText16, formatTimeLabel, nextWeekday, pickSlot, quer
 const TZ = "America/Los_Angeles";
 const HOST = "host@halcyon.example";
 const OWNER = "owner@halcyon.example";
-
-async function signIn(page: Page, email: string) {
-  await page.goto("/portal/sign-in");
-  await page.getByLabel("Email").fill(email);
-  const requested = new Date();
-  await page.getByRole("button", { name: "Email me a sign-in link" }).click();
-  await expect(page.getByText(/Check your email/i)).toBeVisible();
-  // The email is sent after the answer, so wait for it to reach the dev mail store.
-  let link: string | undefined;
-  await expect
-    .poll(async () => {
-      const [mail] = await query<{ text: string }>(
-        `select text from email_message where "to" = $1 and created_at >= $2 order by created_at desc limit 1`,
-        [email, requested],
-      );
-      link = mail?.text.match(/https?:\/\/\S+\/portal\/auth\?token=[A-Za-z0-9_-]{43}/)?.[0];
-      return Boolean(link);
-    })
-    .toBe(true);
-  if (!link) throw new Error("no sign-in link in the dev mail store");
-  await page.goto(new URL(link).pathname + new URL(link).search);
-  await page.getByRole("button", { name: /^Sign in to Halcyon/ }).click();
-  await expect(page).toHaveURL(/\/portal\/tonight/);
-}
 
 test("a guest booking appears on Tonight with a PAID badge within 2 seconds", async ({ browser, page }, info) => {
   test.skip(info.project.name !== "desktop");

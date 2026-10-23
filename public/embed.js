@@ -19,7 +19,6 @@
   var accentAttr = script.getAttribute("data-accent") || "";
   var accent = /^#[0-9a-fA-F]{6}$/.test(accentAttr) ? accentAttr : "#1F5A63";
   var targetSelector = script.getAttribute("data-target");
-  var target = targetSelector ? document.querySelector(targetSelector) : null;
 
   var button = document.createElement("button");
   button.type = "button";
@@ -36,8 +35,16 @@
   b.minHeight = "48px";
   b.cursor = "pointer";
   b.boxShadow = "0 1px 2px rgba(0,0,0,.12), 0 6px 20px rgba(0,0,0,.12)";
-  if (target) target.appendChild(button);
-  else script.insertAdjacentElement("afterend", button);
+  // With async or defer the script may run before the target exists, or from <head>:
+  // place the button once the document is parsed, and never inside <head>.
+  function place() {
+    var target = targetSelector ? document.querySelector(targetSelector) : null;
+    if (target) target.appendChild(button);
+    else if (script.parentNode && script.parentNode !== document.head) script.insertAdjacentElement("afterend", button);
+    else if (document.body) document.body.appendChild(button);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", place);
+  else place();
 
   var overlay = null;
   var lastFocus = null;

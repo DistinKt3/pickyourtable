@@ -1,4 +1,7 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Frame, type Page } from "@playwright/test";
+
+/** A page, or the widget inside the embed's iframe. */
+export type Surface = Page | Frame;
 import pg from "pg";
 
 /** Direct database access for assertions and fixtures (the e2e server's own database). */
@@ -46,7 +49,7 @@ export function nextWeekday(isoWeekday: number, minDaysAhead = 1, tz = "America/
 }
 
 /** Opens the slot picker and applies date, time and party. */
-export async function pickSlot(page: Page, date: string, time: string, party = 2) {
+export async function pickSlot(page: Surface, date: string, time: string, party = 2) {
   const trigger = page.getByRole("button", { name: /Choose a (time|date)/ }).first();
   await trigger.click();
   const sheet = page.getByRole("dialog").last();
@@ -64,7 +67,7 @@ export async function pickSlot(page: Page, date: string, time: string, party = 2
 }
 
 /** Taps a table in whichever room view is showing (2D plan, 3D labels or the list). */
-export async function tapTable(page: Page, label: string) {
+export async function tapTable(page: Surface, label: string) {
   const target = page.getByRole("button", { name: new RegExp(`^${label}\\s?,`) }).first();
   await target.click();
   await expect(page.getByRole("heading", { name: label, exact: true }).first()).toBeVisible();
@@ -100,4 +103,29 @@ export async function expectBodyText16(page: Page, label: string) {
     return found;
   });
   expect(small, `${label}: ${small.join(" | ")}`).toEqual([]);
+}
+
+/** Signs an operator in through the real magic link, read from the dev mail store. */
+export async function signIn(page: Page, email: string) {
+  await page.goto("/portal/sign-in");
+  await page.getByLabel("Email").fill(email);
+  const requested = new Date();
+  await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+  await expect(page.getByText(/Check your email/i)).toBeVisible();
+  // The email is sent after the answer, so wait for it to reach the dev mail store.
+  let link: string | undefined;
+  await expect
+    .poll(async () => {
+      const [mail] = await query<{ text: string }>(
+        `select text from email_message where "to" = $1 and created_at >= $2 order by created_at desc limit 1`,
+        [email, requested],
+      );
+      link = mail?.text.match(/https?:\/\/\S+\/portal\/auth\?token=[A-Za-z0-9_-]{43}/)?.[0];
+      return Boolean(link);
+    })
+    .toBe(true);
+  if (!link) throw new Error("no sign-in link in the dev mail store");
+  await page.goto(new URL(link).pathname + new URL(link).search);
+  await page.getByRole("button", { name: /^Sign in to Halcyon/ }).click();
+  await expect(page).toHaveURL(/\/portal\/tonight/);
 }

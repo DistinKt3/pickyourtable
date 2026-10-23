@@ -138,6 +138,16 @@ describe("operator operations (O-1, O-2)", () => {
       409,
       "too_early",
     );
+    // The next day nobody can be seated, so no refund can move through "another table".
+    await rejects(
+      onTheNight(
+        b.holdId,
+        () => seatReservation({ venueId: "halcyon", reservationId: b.holdId, tableCode: "S1", actor: host }),
+        24 * 60,
+      ),
+      409,
+      "too_late",
+    );
     const early = await onTheNight(
       b.holdId,
       () => seatReservation({ venueId: "halcyon", reservationId: b.holdId, actor: host }),

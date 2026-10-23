@@ -8,7 +8,7 @@ import { issueMagicLink, redeemMagicLink, sessionCookieName, sessionCookieOption
 import { env, resetEnvCache } from "@/lib/env";
 import { clearFlagCache } from "@/lib/flags";
 import { api } from "@/lib/http/api";
-import { maskEmail } from "@/lib/log";
+import { logPath, maskEmail } from "@/lib/log";
 import { derivedKey, hashIdentifier, safeEqual } from "@/lib/security/crypto";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { clientIp, deviceHash, isSameOrigin } from "@/lib/security/request";
@@ -26,6 +26,17 @@ function req(url: string, init: { method?: string; headers?: Record<string, stri
 afterAll(async () => {
   await closeDb();
 });
+
+/** The environment's validation errors, or "" when it is valid. */
+function envIssues(): string {
+  resetEnvCache();
+  try {
+    env();
+    return "";
+  } catch (e) {
+    return (e as Error).message;
+  }
+}
 
 describe("signed tokens", () => {
   it("round-trips and binds purpose, subject and nonce", async () => {
@@ -85,8 +96,10 @@ describe("request identity and CSRF", () => {
     expect(isSameOrigin(req("/x", { method: "POST" }))).toBe(false);
   });
 
-  it("trusts only the configured client IP header", () => {
-    expect(clientIp(req("/x", { headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.1" } }))).toBe("203.0.113.9");
+  it("trusts only the configured client IP header, and only its last hop", () => {
+    // The proxy appends the address it saw; anything before it came from the client.
+    expect(clientIp(req("/x", { headers: { "x-forwarded-for": "198.51.100.66, 203.0.113.9" } }))).toBe("203.0.113.9");
+    expect(clientIp(req("/x", { headers: { "x-forwarded-for": "203.0.113.9" } }))).toBe("203.0.113.9");
     process.env.TRUST_PROXY = "none";
     resetEnvCache();
     expect(clientIp(req("/x", { headers: { "x-forwarded-for": "203.0.113.9" } }))).toBe("local");
@@ -238,8 +251,36 @@ describe("environment and logs", () => {
     expect(env().PAYMENTS_MODE).toBe("sim");
   });
 
-  it("masks emails in log lines", () => {
+  it("refuses unsafe defaults in production unless it is a test deployment", () => {
+    const vars = process.env as Record<string, string | undefined>;
+    const saved = { ...vars };
+    try {
+      vars.NODE_ENV = "production";
+      vars.TRUST_PROXY = "none";
+      vars.RATE_LIMIT_SCALE = "5";
+      vars.TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA";
+      const refused = envIssues();
+      expect(refused).toMatch(/TRUST_PROXY/);
+      expect(refused).toMatch(/TURNSTILE_SECRET_KEY: Turnstile test keys always pass/);
+      expect(refused).toMatch(/RATE_LIMIT_SCALE: must be 1 in production/);
+      // A test build may use test keys and scaled limits, but never one shared IP bucket.
+      vars.PYT_TEST_DEPLOYMENT = "1";
+      expect(envIssues()).toMatch(/TRUST_PROXY/);
+      expect(envIssues()).not.toMatch(/TURNSTILE|RATE_LIMIT/);
+      vars.TRUST_PROXY = "vercel";
+      expect(envIssues()).toBe("");
+    } finally {
+      for (const k of Object.keys(vars)) if (!(k in saved)) delete vars[k];
+      Object.assign(vars, saved);
+      resetEnvCache();
+    }
+  });
+
+  it("masks emails in log lines, and cuts manage tokens out of logged paths", () => {
     expect(maskEmail("guest jane.doe@example.com paid")).toBe("guest j***@example.com paid");
+    expect(logPath("/api/manage/eyJhbGciOi.abc.def/cancel")).toBe("/api/manage/:token/cancel");
+    expect(logPath("/v/halcyon/manage/eyJhbGciOi.abc.def")).toBe("/v/halcyon/manage/:token");
+    expect(logPath("/api/holds/0190")).toBe("/api/holds/0190");
   });
 
   it("verifies Turnstile with the documented test secrets", async () => {

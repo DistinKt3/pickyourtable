@@ -34,7 +34,8 @@ export function proxy(request: NextRequest) {
     "img-src 'self' data: blob: https://*.stripe.com",
     "font-src 'self'",
     `connect-src 'self' https://api.stripe.com https://challenges.cloudflare.com${isDev ? " ws: wss:" : ""}`,
-    "frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://challenges.cloudflare.com",
+    // The demo venue site stands in for a third-party page that frames our widget.
+    `frame-src ${pathname.startsWith("/demo/") ? "'self' " : ""}https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://challenges.cloudflare.com`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'none'",

@@ -2,7 +2,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { ZodError, type z } from "zod";
 import { isWidgetEnabled } from "@/lib/flags";
-import { log } from "@/lib/log";
+import { log, logPath } from "@/lib/log";
 import { randomToken } from "@/lib/security/crypto";
 import { isSameOrigin } from "@/lib/security/request";
 
@@ -92,7 +92,7 @@ export function api<P = Record<string, never>, Q = undefined, B = undefined>(
 
 function errorResponse(e: unknown, req: NextRequest, requestId: string): Response {
   if (e instanceof ApiError) {
-    if (e.status >= 500) log.error("api.error", { requestId, path: req.nextUrl.pathname, code: e.code });
+    if (e.status >= 500) log.error("api.error", { requestId, path: logPath(req.nextUrl.pathname), code: e.code });
     return Response.json({ error: { code: e.code, message: e.message, ...e.extra } }, { status: e.status, headers: e.headers });
   }
   if (e instanceof ZodError) {
@@ -107,7 +107,7 @@ function errorResponse(e: unknown, req: NextRequest, requestId: string): Respons
       { status: 400 },
     );
   }
-  log.error("api.unhandled", { requestId, path: req.nextUrl.pathname, method: req.method, error: e });
+  log.error("api.unhandled", { requestId, path: logPath(req.nextUrl.pathname), method: req.method, error: e });
   return Response.json(
     { error: { code: "server_error", message: "Something went wrong on our side. Please try again." } },
     { status: 500 },

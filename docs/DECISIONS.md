@@ -31,5 +31,32 @@ Implementation choices the PRD leaves open, each with a one-line reason. Product
 | Window two-tops seat guests north and south of the table; the main seat faces the water | Puts the view in front of the main seat, as the seat view promises. |
 | Seat views use the 26 mm diagonal at every aspect ratio | Keeps the lens identical on portrait phones; never ultra-wide. |
 | Guests are cookieless; a random device id in local storage is sent as a header | Works inside a third-party iframe, where Safari blocks cookies. |
-| Booking refunds and cancellations by the venue are Owner-only; Hosts view, seat, mark no-shows and resend | Money movement stays with the owner role. |
+| Booking refunds and cancellations by the venue are Owner-only; Hosts view, seat, mark no-shows and resend | Money movement stays with the owner role. The one exception is the PRD's automatic refund when a guest is seated at another table, which a Host triggers only on the booking's own day. |
 | Magic links need a POST to redeem | Email scanners prefetch links; a GET must not use them up. |
+| Holds and late re-confirmations take a per-table advisory lock, after the device lock | Concurrent inserts under the exclusion constraint can deadlock each other; one lock order per table turns that into a clean "taken". A deadlock (40P01) is also read as a lost race. |
+| Seating is allowed on the booking's day only; a no-show only once its time has passed | A no-show keeps the fee, so marking one early would take a guest's money. The server refuses with `too_early`; Tonight shows later dates as "Booked" with no arrival actions. |
+| The simulator emits `payment_intent.created` once per idempotency key | Matches Stripe, so retries never double-count in reconciliation. |
+| Guests see the venue's name as the email sender, never ours | The booking is with the venue; the From name is sanitised against header injection. |
+
+## Guest interface
+
+| Decision | Reason |
+| --- | --- |
+| The mobile table card is our own non-modal sheet (`CardSheet`); vaul stays for the modal sheets | vaul's `modal={false}` still lets Radix hide the page from screen readers, which would leave the room unreachable while the card is open. |
+| Swiping the card carousel jumps instantly when the selection changes elsewhere | An animated programmatic scroll passed through other cards and selected them on the way. |
+| The reserve button reads "Reserve this table – $40" with an en dash | Reads as one phrase; the price is part of the button's name for screen readers. |
+| Body text is 16 px; metadata lines (attributes, counts, prices, status pills) are 15 px and marked `data-meta` | The PRD rule, checked in the browser at every step of the a11y walk and on every portal screen. |
+| Accessible names start with the visible text, extra context in `sr-only` | WCAG 2.5.3; voice-control users say what they see. |
+| One rule orients the plan and the 3D camera: landscape faces the view side; portrait is the view bearing + 270° | Halcyon reads west-up and Orchard Room east-up on phones, with the water or garden on the same side in 2D and 3D. |
+
+## Operator portal
+
+| Decision | Reason |
+| --- | --- |
+| Tonight polls every 1.5 s while visible and pauses when hidden | Meets "a new booking appears within 2 s" without sockets; measured end to end in `tests/e2e/portal.spec.ts`. |
+| Tonight plan badges carry just the booking time; labels fit compact-first (`labelFit`) | Neighbouring window tables must all show as paid on a tablet; the full form is used wherever it fits. |
+| Table numbers are set in the interface sans inside serif names | The serif's "1" reads as "l" ("Table 11"). |
+| Sign-in requests answer `{ ok: true }` for every address, with the lookup after the response | No account enumeration by answer or timing. |
+| The sign-in link page uses a same-origin referrer policy | `no-referrer` made browsers send `Origin: null`, which the same-origin check rightly refuses. |
+| Blackouts are entered in venue-local time and stored as UTC with `@date-fns/tz` | Correct across the clock changes; tested over the November change. |
+| The widget flag cache is one per process (`globalThis`), 15 s | Next bundles pages and route handlers separately; per-module caches let the page and the APIs disagree. |

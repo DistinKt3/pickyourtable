@@ -13,6 +13,11 @@ export function maskEmail(value: string): string {
   return value.replace(EMAIL, (_m, first: string, domain: string) => `${first}***@${domain}`);
 }
 
+/** A request path fit for a log line: a manage link's token is a credential, so it is cut out. */
+export function logPath(pathname: string): string {
+  return pathname.replace(/\/manage\/[^/]+/, "/manage/:token");
+}
+
 function scrub(value: unknown, depth = 0): unknown {
   if (depth > 4) return "[depth]";
   if (typeof value === "string") return maskEmail(value);

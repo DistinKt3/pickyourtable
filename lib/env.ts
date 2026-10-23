@@ -47,8 +47,12 @@ const schema = z
     TURNSTILE_MODE: z.enum(["live", "offline-test"]).default("live"),
 
     CRON_SECRET: z.string().min(16).optional(),
-    /** Which client-IP header to trust: Vercel's, a generic proxy's, or none. */
-    TRUST_PROXY: z.enum(["vercel", "xff", "none"]).default("none"),
+    /**
+     * Which client-IP header to trust: Vercel's, the last hop of X-Forwarded-For (a proxy
+     * you run), or none. Defaults to Vercel's on Vercel. Production refuses `none`: every
+     * caller would share one rate-limit bucket, so one client could lock out everyone.
+     */
+    TRUST_PROXY: z.enum(["vercel", "xff", "none"]).default(process.env.VERCEL ? "vercel" : "none"),
     JOBS_INPROCESS: z.enum(["0", "1"]).default("0"),
     /** Comma-separated origins allowed to frame the guest widget (embed). */
     EMBED_ALLOWED_ORIGINS: z.string().default(""),
@@ -67,8 +71,30 @@ const schema = z
     if (v.EMAIL_MODE === "postmark" && !v.POSTMARK_SERVER_TOKEN) {
       ctx.addIssue({ code: "custom", path: ["POSTMARK_SERVER_TOKEN"], message: "required when EMAIL_MODE=postmark" });
     }
-    if (v.NODE_ENV === "production" && v.TURNSTILE_MODE === "offline-test" && process.env.PYT_ALLOW_OFFLINE_TURNSTILE !== "1") {
-      ctx.addIssue({ code: "custom", path: ["TURNSTILE_MODE"], message: "offline-test is not allowed in production" });
+    if (v.NODE_ENV === "production") {
+      // PYT_TEST_DEPLOYMENT=1 marks a production build used for tests or a private demo
+      // (the e2e server): it may use Turnstile's test keys and scaled-up rate limits.
+      const testDeployment = process.env.PYT_TEST_DEPLOYMENT === "1";
+      if (v.TRUST_PROXY === "none") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["TRUST_PROXY"],
+          message: "set vercel, or xff behind a proxy you control; none puts every client in one rate-limit bucket",
+        });
+      }
+      if (!testDeployment && v.TURNSTILE_MODE === "offline-test") {
+        ctx.addIssue({ code: "custom", path: ["TURNSTILE_MODE"], message: "offline-test is not allowed in production" });
+      }
+      if (!testDeployment && (/^[123]x0{10}/.test(v.TURNSTILE_SECRET_KEY) || /^[123]x0{10}/.test(v.TURNSTILE_SITE_KEY))) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["TURNSTILE_SECRET_KEY"],
+          message: "Turnstile test keys always pass; set real keys (or PYT_TEST_DEPLOYMENT=1 for a test build)",
+        });
+      }
+      if (!testDeployment && v.RATE_LIMIT_SCALE !== 1) {
+        ctx.addIssue({ code: "custom", path: ["RATE_LIMIT_SCALE"], message: "must be 1 in production" });
+      }
     }
   });
 

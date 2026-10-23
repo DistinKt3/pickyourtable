@@ -67,14 +67,20 @@ function stateError(status: ReservationStatus): OperationError {
 }
 
 /**
- * Arrival is marked on the night. Seating is allowed from the start of the booking's
- * day at the venue (guests arrive early); a no-show only once the booking time has
- * passed, because it keeps the fee.
+ * Arrival is marked on the night. Seating is allowed on the booking's day at the venue
+ * only (guests arrive early): seating at another table refunds the fee, so a Host must
+ * not be able to do it for a booking from another day. A no-show is allowed once the
+ * booking time has passed, because it keeps the fee.
  */
 function assertArrivalTime(b: LoadedBooking, action: "seat" | "no_show"): void {
   const now = new Date();
-  if (action === "seat" && localDateTime(b.r.startsAt, b.v.timezone).date > todayIn(b.v.timezone)) {
+  const day = localDateTime(b.r.startsAt, b.v.timezone).date;
+  const today = todayIn(b.v.timezone);
+  if (action === "seat" && day > today) {
     throw new OperationError(409, "too_early", "This booking is for a later date. Seat guests on the day.");
+  }
+  if (action === "seat" && day < today) {
+    throw new OperationError(409, "too_late", "This booking was for an earlier date, so its arrival can't be changed now.");
   }
   if (action === "no_show" && now < b.r.startsAt) {
     throw new OperationError(409, "too_early", "You can mark a no-show once the booking time has passed.");

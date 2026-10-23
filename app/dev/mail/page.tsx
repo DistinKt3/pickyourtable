@@ -1,10 +1,10 @@
-import { desc, eq, inArray, or, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/primitives";
 import { db } from "@/db/client";
-import { emailMessage, reservation } from "@/db/schema";
+import { emailMessage } from "@/db/schema";
 import { currentOperator } from "@/lib/auth/session";
 import { env } from "@/lib/env";
 import { cx } from "@/lib/format";
@@ -16,7 +16,9 @@ export const metadata: Metadata = { title: "Dev inbox" };
 /**
  * Every email the app has stored (EMAIL_MODE=dev), newest first. Open in development;
  * on a deployed demo with the dev mail store, only to a signed-in operator, who sees
- * their own venue's mail. Message HTML renders in a sandboxed frame with no scripts.
+ * only mail addressed to them. Guest mail carries manage links, which would let a
+ * Host cancel and refund as the guest, outside the operator audit trail. Message HTML
+ * renders in a sandboxed frame with no scripts.
  */
 
 interface Attachment {
@@ -49,15 +51,7 @@ export default async function DevMail({ searchParams }: { searchParams: Promise<
   const scope = await access();
   const { id } = await searchParams;
 
-  const visible = scope.venueId
-    ? or(
-        eq(emailMessage.to, scope.email!),
-        inArray(
-          emailMessage.reservationId,
-          db().select({ id: reservation.id }).from(reservation).where(eq(reservation.venueId, scope.venueId)),
-        ),
-      )
-    : sql`true`;
+  const visible = scope.email ? eq(emailMessage.to, scope.email) : sql`true`;
   const messages = await db()
     .select({
       id: emailMessage.id,

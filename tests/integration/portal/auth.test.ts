@@ -174,6 +174,20 @@ describe("magic-link sign-in", () => {
     expect(bad.res.headers.get("location")).toBe("http://localhost:3000/portal/sign-in?link=expired");
   });
 
+  it("refuses a cross-site form post to redeem (login CSRF) and leaves the link unused", async () => {
+    const issued = await issueMagicLink(HALCYON_HOST);
+    for (const origin of ["https://evil.example", null]) {
+      const r = await call(redeemRoute, request("POST", "/api/portal/auth/redeem", { form: { token: issued!.token }, origin }));
+      expect(r.status).toBe(403);
+      expect(r.res.headers.get("set-cookie")).toBeNull();
+    }
+    const [row] = await db()
+      .select()
+      .from(magicLink)
+      .where(eq(magicLink.tokenHash, sha256(issued!.token)));
+    expect(row?.usedAt).toBeNull();
+  });
+
   it("sign-out revokes the session and clears the cookie", async () => {
     const issued = await issueMagicLink(HALCYON_HOST);
     const signedIn = await call(redeemRoute, request("POST", "/api/portal/auth/redeem", { body: { token: issued!.token } }));

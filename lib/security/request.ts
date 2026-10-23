@@ -10,8 +10,11 @@ export function clientIp(req: Request): string {
     if (v) return v.split(",")[0]!.trim();
   }
   if (mode === "xff") {
+    // The last entry is the one our proxy appended; earlier entries are whatever the
+    // client sent and can be forged.
     const v = req.headers.get("x-forwarded-for");
-    if (v) return v.split(",")[0]!.trim();
+    const last = v?.split(",").at(-1)?.trim();
+    if (last) return last;
   }
   return "local";
 }

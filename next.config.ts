@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // proxy.ts sets the full CSP; these hold even for requests its matcher skips.
+      ...["/portal/:path*", "/dev/:path*", "/api/:path*"].map((source) => ({
+        source,
+        headers: [{ key: "X-Frame-Options", value: "DENY" }],
+      })),
       {
         source: "/venues/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }],
