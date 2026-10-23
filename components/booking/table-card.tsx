@@ -107,6 +107,7 @@ export function TableCard({
         <div
           ref={scroller}
           data-vaul-no-drag
+          data-carousel
           className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain scrollbar-none"
         >
           {deck.map((t) => (
