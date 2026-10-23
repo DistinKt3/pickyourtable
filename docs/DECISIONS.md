@@ -72,3 +72,9 @@ Implementation choices the PRD leaves open, each with a one-line reason. Product
 | Sit here in 3D moves the camera to the seat and steps the card aside behind "Back to the room"; without 3D it shows the seat view full screen | The same promise in both renderers: you see what you will see from that seat. |
 | The KTX2 transcoder is vendored under `public/vendor/basis`, unmodified from three 0.186.1 (Apache-2.0, license beside it) | Venue models with compressed textures load from our own origin under the CSP. |
 | Frame loop on demand, device pixel ratio capped at 2, shadows rendered once | Battery and frame rate on mid-range phones; the room only changes when the camera or a table does. |
+| Dark mode shows the room at dusk (warm floor bounce, amber votives), light mode in daylight | Each theme is designed, not inverted; seat renders keep one late-afternoon light so every view is comparable. |
+| When labels crowd, prices give way before names; the selected table keeps its price, and accessible names always carry it | Every table stays findable by name; the price is one tap away. |
+| FXAA rather than SMAA | SMAA's lookup images would ship with the page for a difference not visible at phone pixel densities. |
+| Seat renders capture at 2880 x 1920 (2.25x the largest output) and must be 250 KB or less per file | Supersampled edges for the hero image within the image budget. |
+| The render route (`/render/[venue]/[table]`) exists only in development or with `PYT_RENDER_ROUTE=1` | It is a build tool, not a page. |
+| The model loaders (GLTF, meshopt, KTX2) are a separate chunk, loaded only when a venue ships `model.glb` | Venues built from `venue.json` never download them. |
