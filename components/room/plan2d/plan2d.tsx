@@ -640,6 +640,9 @@ function Compass({ bearing }: { bearing: number }) {
  */
 const COMPACT_BELOW_PX_PER_M = 30;
 
+/** Label sizes depend only on their text, so measure each once (per loaded font set). */
+const sizeCache = new Map<string, { w: number; h: number }>();
+
 function useLabelModes(
   boxRef: React.RefObject<HTMLDivElement | null>,
   box: { w: number; h: number } | null,
@@ -654,9 +657,13 @@ function useLabelModes(
   useEffect(() => {
     const el = boxRef.current;
     if (!el || !box) return;
+    const fontsReady = document.fonts?.status !== "loading";
     const size = (selector: string) => {
       const node = el.querySelector<HTMLElement>(selector);
       if (!node) return { w: 0, h: 0 };
+      const key = `${selector.includes("full") ? "f" : selector.includes("compact") ? "c" : "a"}|${node.textContent ?? ""}`;
+      const hit = fontsReady ? sizeCache.get(key) : undefined;
+      if (hit) return hit;
       const clone = node.cloneNode(true) as HTMLElement;
       clone.classList.remove("hidden");
       clone.classList.add(selector.includes("full") ? "flex" : "inline-flex");
@@ -666,7 +673,9 @@ function useLabelModes(
       el.appendChild(clone);
       const r = clone.getBoundingClientRect();
       clone.remove();
-      return { w: r.width, h: r.height };
+      const measured = { w: r.width, h: r.height };
+      if (fontsReady) sizeCache.set(key, measured);
+      return measured;
     };
     type Rect = { x1: number; y1: number; x2: number; y2: number };
     const GAP = 3;

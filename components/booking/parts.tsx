@@ -18,6 +18,7 @@ export function SeatViewImage({
   priority = false,
   className,
   showTag = true,
+  fit = false,
 }: {
   image: SeatViewImageData;
   alt: string;
@@ -25,13 +26,23 @@ export function SeatViewImage({
   priority?: boolean;
   className?: string;
   showTag?: boolean;
+  /** Fit inside the viewport (full-screen view) instead of filling the width. */
+  fit?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className={cx("relative aspect-[3/2] w-full overflow-hidden bg-surface-2", className)}>
+    <div
+      className={cx(
+        "relative aspect-[3/2] overflow-hidden bg-surface-2",
+        fit ? "w-[min(100vw,calc((100dvh-5.5rem)*1.5))]" : "w-full",
+        className,
+      )}
+    >
       {failed ? (
         <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(180deg,var(--surface-2),var(--surface-3))]">
-          <p className="px-6 text-center text-[0.9375rem] text-ink-3">The view from this seat is on its way.</p>
+          {showTag ? (
+            <p className="px-6 text-center text-[0.9375rem] text-ink-3">The view from this seat is on its way.</p>
+          ) : null}
         </div>
       ) : (
         <picture>

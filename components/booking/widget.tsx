@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/primitives";
+import { CardSheet } from "@/components/ui/card-sheet";
 import { BottomSheet } from "@/components/ui/sheet";
 import { formatMoney, formatTime } from "@/lib/format";
 import { type RoomData, type RoomTable, visualState } from "@/lib/room/types";
@@ -56,6 +57,15 @@ export function GuestWidget({ data, today, turnstileSiteKey, turnstileMode, embe
   const [reserving, setReserving] = useState(false);
   const [sitting, setSitting] = useState<RoomTable | null>(null);
   const [sheetHeight, setSheetHeight] = useState(0);
+  // The last table shown, so the card keeps its content while it slides away.
+  const [cardCode, setCardCode] = useState<string | null>(null);
+  useEffect(
+    () =>
+      useRoom.subscribe((st, prev) => {
+        if (st.selected && st.selected !== prev.selected) setCardCode(st.selected);
+      }),
+    [],
+  );
   const { status: availabilityStatus, error: availabilityError } = useAvailability(venue.id);
 
   useEffect(() => setReducedMotion(reduced), [reduced, setReducedMotion]);
@@ -250,21 +260,24 @@ export function GuestWidget({ data, today, turnstileSiteKey, turnstileMode, embe
 
       {!isDesktop ? (
         <>
-          <BottomSheet
+          <CardSheet
             open={Boolean(table) && !inFlow && !picking}
-            onOpenChange={(o) => !o && closeCard()}
-            title={table ? table.label : "Table"}
+            onClose={closeCard}
+            label={table ? `${table.label}, table details` : "Table details"}
           >
-            <MeasuredHeight onHeight={setSheetHeight}>
-              <TableCard
-                data={data}
-                onPickSlot={() => setPicking(true)}
-                onReserve={(t) => void reserve(t)}
-                onSitHere={sitHere}
-                reserving={reserving}
-              />
-            </MeasuredHeight>
-          </BottomSheet>
+            {cardCode ? (
+              <MeasuredHeight onHeight={setSheetHeight}>
+                <TableCard
+                  data={data}
+                  code={cardCode}
+                  onPickSlot={() => setPicking(true)}
+                  onReserve={(t) => void reserve(t)}
+                  onSitHere={sitHere}
+                  reserving={reserving}
+                />
+              </MeasuredHeight>
+            ) : null}
+          </CardSheet>
           <BottomSheet open={inFlow} onOpenChange={() => undefined} title="Reserve your table" modal full dismissible={false}>
             <Flow data={data} onClose={closeCard} onRehold={() => void rehold()} />
           </BottomSheet>
@@ -423,8 +436,8 @@ function SeatOverlay({ table, onClose }: { table: RoomTable; onClose: () => void
       }}
       className="fixed inset-0 m-0 flex h-dvh max-h-none w-dvw max-w-none flex-col bg-black p-0 text-white backdrop:bg-black"
     >
-      <div className="flex min-h-0 flex-1 items-center">
-        <SeatViewImage image={table.image!} alt={`The view from ${table.label}`} sizes="100vw" priority />
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <SeatViewImage image={table.image!} alt={`The view from ${table.label}`} sizes="100vw" priority fit />
       </div>
       <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <p className="font-display text-2xl">{table.label}</p>

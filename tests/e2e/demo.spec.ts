@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { formatTimeLabel, nextFriday, pickSlot, query, tapTable } from "./helpers";
+import { addDays, formatTimeLabel, nextFriday, pickSlot, query, tapTable } from "./helpers";
 
 /**
  * The PRD demo script (M2 gate): open Halcyon on a phone, pick Friday 8:00 pm for 2,
@@ -8,7 +8,8 @@ import { formatTimeLabel, nextFriday, pickSlot, query, tapTable } from "./helper
  */
 test("demo script runs end to end in under 90 seconds", async ({ page }, info) => {
   const started = Date.now();
-  const friday = nextFriday();
+  // Each project and repeat books its own Friday, so runs never compete for Window 1.
+  const friday = addDays(nextFriday(), 7 * (2 * info.repeatEachIndex + (info.project.name === "phone" ? 0 : 1)));
   await page.goto("/v/halcyon");
   await expect(page.getByRole("heading", { name: "Halcyon" })).toBeVisible();
 
@@ -21,19 +22,23 @@ test("demo script runs end to end in under 90 seconds", async ({ page }, info) =
   await page.getByRole("button", { name: "Sit here" }).first().click();
   await page.getByRole("button", { name: /Back to the room/ }).click();
 
-  // Swipe to Booth 2 to compare, then back to Window 1.
+  // Swipe to Booth 2 to compare, then swipe back to Window 1.
   const carousel = page.locator("[data-carousel]").first();
-  const swipeTo = async (label: string) => {
+  const title = page.locator("[data-card-title]:visible").first();
+  const swipeTo = async (label: string, direction: 1 | -1) => {
     for (let i = 0; i < 20; i++) {
-      if (await page.getByRole("heading", { name: label, exact: true }).first().isVisible()) return;
-      await carousel.evaluate((el) => el.scrollBy({ left: el.clientWidth, behavior: "instant" }));
-      await page.waitForTimeout(250);
+      const before = (await title.textContent())?.trim();
+      if (before === label) return;
+      await carousel.evaluate((el, d) => el.scrollBy({ left: d * el.clientWidth, behavior: "instant" }), direction);
+      // Like a person, wait for the card to change before swiping again.
+      await expect(title).not.toHaveText(before ?? "", { timeout: 5_000 });
     }
     throw new Error(`could not swipe to ${label}`);
   };
-  await swipeTo("Booth 2");
+  await swipeTo("Booth 2", 1);
   await expect(page.getByRole("button", { name: /^Reserve this table – \$30$/ })).toBeVisible();
-  await tapTable(page, "Window 1");
+  await swipeTo("Window 1", -1);
+  await expect(page.getByRole("button", { name: /^Reserve this table – \$40$/ })).toBeVisible();
 
   // Reserve: hold, details, Apple Pay (test), confirmed.
   await page.getByRole("button", { name: /^Reserve this table/ }).click();
@@ -43,7 +48,7 @@ test("demo script runs end to end in under 90 seconds", async ({ page }, info) =
   await page.getByLabel("Mobile").fill("+1 415 555 0101");
   await page.getByLabel("Occasion").selectOption("anniversary");
   await page.getByRole("button", { name: /^Continue to payment/ }).click();
-  await page.getByText("Apple Pay", { exact: true }).click();
+  await page.getByRole("radio", { name: /Apple Pay/ }).check();
   await page.getByRole("button", { name: "Pay $40" }).click();
   await expect(page.getByRole("heading", { name: /You.re at Window 1/ })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("img", { name: "The view from Window 1" }).first()).toBeVisible();

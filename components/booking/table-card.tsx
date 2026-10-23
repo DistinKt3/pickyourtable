@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { stateText } from "@/components/room/views";
 import { Button } from "@/components/ui/button";
 import { Banner, Chip } from "@/components/ui/primitives";
@@ -20,18 +20,22 @@ import { SeatViewImage, TierDot } from "./parts";
  */
 export function TableCard({
   data,
+  code,
   onPickSlot,
   onReserve,
   onSitHere,
   reserving,
 }: {
   data: RoomData;
+  /** Shows this table instead of the selection (keeps content while the sheet closes). */
+  code?: string | null;
   onPickSlot: () => void;
   onReserve: (t: RoomTable) => void;
   onSitHere: (t: RoomTable) => void;
   reserving: boolean;
 }) {
-  const selected = useRoom((s) => s.selected);
+  const storeSelected = useRoom((s) => s.selected);
+  const selected = storeSelected ?? code ?? null;
   const availability = useRoom((s) => s.availability);
   const slot = useRoom((s) => s.slot);
   const select = useRoom((s) => s.select);
@@ -58,43 +62,44 @@ export function TableCard({
     deck.findIndex((t) => t.id === selected),
   );
   const scroller = useRef<HTMLDivElement>(null);
-  const settling = useRef(false);
 
   // Follow the selection made elsewhere (a tap in the room, the list, a suggestion).
   useEffect(() => {
     const el = scroller.current;
     if (!el) return;
     const target = index * el.clientWidth;
-    if (Math.abs(el.scrollLeft - target) > 2) {
-      settling.current = true;
-      el.scrollTo({ left: target, behavior: reducedMotion ? "auto" : "smooth" });
-      const id = setTimeout(() => (settling.current = false), 450);
-      return () => clearTimeout(id);
-    }
+    if (Math.abs(el.scrollLeft - target) > 2) el.scrollTo({ left: target, behavior: reducedMotion ? "auto" : "smooth" });
   }, [index, reducedMotion]);
 
-  const onScrollEnd = useCallback(() => {
-    const el = scroller.current;
-    if (!el || settling.current) return;
-    const i = Math.round(el.scrollLeft / el.clientWidth);
-    const t = deck[i];
-    if (t && t.id !== selected) select(t.id);
-  }, [deck, selected, select]);
+  // A swipe settles on a slide; select it. The listener is attached once and reads
+  // the latest deck from a ref: re-attaching it on every availability refresh would
+  // drop a swipe whose scroll-end was still pending. Selecting the table already
+  // shown is a no-op, so programmatic scrolls cannot loop.
+  const hasTable = Boolean(table);
+  const deckRef = useRef(deck);
+  useEffect(() => {
+    deckRef.current = deck;
+  }, [deck]);
 
   useEffect(() => {
     const el = scroller.current;
-    if (!el) return;
+    if (!el || !hasTable) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const settle = () => {
+      const i = Math.round(el.scrollLeft / el.clientWidth);
+      const t = deckRef.current[i];
+      if (t && t.id !== useRoom.getState().selected) useRoom.getState().select(t.id);
+    };
     const onScroll = () => {
       clearTimeout(timer);
-      timer = setTimeout(onScrollEnd, 110);
+      timer = setTimeout(settle, 110);
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       clearTimeout(timer);
       el.removeEventListener("scroll", onScroll);
     };
-  }, [onScrollEnd]);
+  }, [hasTable]);
 
   if (!table) return null;
   const a = availability?.[table.id];
@@ -251,7 +256,9 @@ function CardDetails({ data, table, fee }: { data: RoomData; table: RoomTable; f
     <>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="font-display text-[2rem] leading-[1.05]">{table.label}</h2>
+          <h2 data-card-title className="font-display text-[2rem] leading-[1.05]">
+            {table.label}
+          </h2>
           <p className="mt-1.5 flex items-center gap-2 text-[0.9375rem] text-ink-2">
             <TierDot color={tier.color} colorDark={tier.colorDark} />
             {tier.name} · {table.seats} seats
