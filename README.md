@@ -88,7 +88,7 @@ Then `pnpm db:seed` to attach the connected account. Charges are destination cha
 ## Deploying (Vercel and Neon)
 
 1. Create a Neon Postgres 18 database and copy its pooled connection string.
-2. Import the repository in Vercel. Set the environment variables from `.env.example`: `DATABASE_URL`, `APP_URL` (the production URL), `APP_SECRET` (32+ random characters), `CRON_SECRET`, `TRUST_PROXY=vercel`, and the Stripe, Postmark (`EMAIL_MODE=postmark`) and Turnstile keys when you have them.
+2. Import the repository in Vercel. Set the environment variables from `.env.example`: `DATABASE_URL`, `APP_URL` (the production URL), `APP_SECRET` (32+ random characters), `CRON_SECRET`, and the Stripe, Postmark (`EMAIL_MODE=postmark`) and Turnstile keys. `TRUST_PROXY` defaults to `vercel` on Vercel. A production build refuses to start with Turnstile's test keys, `TRUST_PROXY=none` or `RATE_LIMIT_SCALE` above 1; for a private demo without Turnstile keys, set `PYT_TEST_DEPLOYMENT=1` and know that bots are not challenged. See `docs/SECURITY.md`.
 3. Deploy. The `vercel-build` script runs the migrations, then builds. `vercel.json` schedules the hold-expiry job every minute and the nightly reconcile and retention jobs.
 4. Seed once from your machine: `DATABASE_URL=<neon url> pnpm db:seed`.
 5. To let a venue's website embed the widget, add its origin to `EMBED_ALLOWED_ORIGINS`.
