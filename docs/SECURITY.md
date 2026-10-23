@@ -25,9 +25,9 @@ How Pick-Your-Table protects guests, venues and money, mapped to OWASP ASVS 4.0 
 | --- | --- |
 | Independent code review of authentication, authorization, venue scoping, tokens, payments, webhooks, escaping and configuration | No critical or high findings. Two medium and five low, all fixed or recorded below. |
 | `pnpm audit` (every severity, production and dev dependencies) | 0 known vulnerabilities |
-| Semgrep: `p/typescript`, `p/react`, `p/nextjs`, `p/secrets`, `p/owasp-top-ten` (145 rules, 223 files) | 0 findings |
+| Semgrep: `p/typescript`, `p/react`, `p/nextjs`, `p/secrets`, `p/owasp-top-ten` (145 rules, 312 files, rerun after the 3D room merged) | 0 findings |
 | gitleaks over the full git history | No leaks. Named test fixtures are allowlisted in `.gitleaks.toml`. |
-| Vitest security, red-team and role tests | 218 tests pass, including `tests/integration/security/security.test.ts` and `tests/integration/portal/{roles,csrf,auth}.test.ts` |
+| Vitest security, red-team and role tests | 356 tests pass across 31 files, including `tests/integration/security/security.test.ts` and `tests/integration/portal/{roles,csrf,auth}.test.ts` |
 | axe (WCAG 2.2 AA) on every guest step and every portal screen | 0 violations |
 
 ## Controls by ASVS chapter
