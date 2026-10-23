@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   bearing,
@@ -20,6 +20,13 @@ describe("venue data contract (D-1)", () => {
     const ids = await listVenueIds();
     expect(ids).toEqual(expect.arrayContaining(["halcyon", "orchard-room"]));
     for (const id of ids) await expect(loadVenue(id)).resolves.toMatchObject({ id });
+  });
+
+  it("every venue model is within the 3 MB budget (D-2)", async () => {
+    const ids = await listVenueIds();
+    const models = ids.flatMap((id) => [`venues/${id}/model.glb`, `public/venues/${id}/model.glb`]).filter((f) => existsSync(f));
+    const over = models.filter((f) => statSync(f).size > 3 * 1024 * 1024);
+    expect(over).toEqual([]);
   });
 
   it("Halcyon matches the PRD's room and table mix", async () => {
