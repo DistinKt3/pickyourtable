@@ -272,7 +272,7 @@ export function createSimProvider(): PaymentsProvider {
 
     async createPaymentIntent(input: CreateIntentInput) {
       const id = `pi_sim_${hex(12)}`;
-      await db()
+      const inserted = await db()
         .insert(simPaymentIntent)
         .values({
           id,
@@ -285,7 +285,8 @@ export function createSimProvider(): PaymentsProvider {
           metadata: input.metadata,
           idempotencyKey: input.idempotencyKey,
         })
-        .onConflictDoNothing({ target: simPaymentIntent.idempotencyKey });
+        .onConflictDoNothing({ target: simPaymentIntent.idempotencyKey })
+        .returning({ id: simPaymentIntent.id });
       // Same idempotency key: Stripe returns the first intent, and refuses different parameters.
       const [row] = await db().select().from(simPaymentIntent).where(eq(simPaymentIntent.idempotencyKey, input.idempotencyKey));
       if (!row) throw new Error("sim payment intent was not stored");
@@ -296,7 +297,7 @@ export function createSimProvider(): PaymentsProvider {
           "Keys for idempotent requests can only be used with the same parameters.",
         );
       }
-      await emit("payment_intent.created", intentObject(row, []));
+      if (inserted.length) await emit("payment_intent.created", intentObject(row, []));
       return info(row, []);
     },
 
