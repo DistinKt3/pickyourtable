@@ -73,7 +73,13 @@ async function waitFor3d(page: Page) {
  */
 async function settle(page: Page) {
   await page.waitForFunction(
-    () => [...document.images].every((i) => i.getBoundingClientRect().width === 0 || (i.complete && i.naturalWidth > 0)),
+    () =>
+      [...document.images].every((i) => {
+        const r = i.getBoundingClientRect();
+        // Only what is on screen: off-screen carousel slides load lazily, when swiped to.
+        const onScreen = r.width > 0 && r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight;
+        return !onScreen || (i.complete && i.naturalWidth > 0);
+      }),
     null,
     { timeout: 60_000 },
   );
